@@ -1,0 +1,255 @@
+void filter2d_mean3(double * img_in, long width, long height,
+ double * img_out){
+
+double filter[3][3] = { { 1./9., 1./9., 1./9. },
+			{ 1./9., 1./9., 1./9. },
+			{ 1./9., 1./9., 1./9. },
+	};
+
+long i, j, n, m;
+
+for(i=0; i < height * width; i++){
+	img_out[i] = img_in[i];
+}
+for(i=1; i < height - 1; i++){
+	for(j=1; j < width -1; j++){
+		double sum = 0;
+		for(m=-1; m <= 1; m++){
+			for (n=-1; n <= 1; n++){
+				sum += img_in[ (i-m)*width + (j-n)] * filter[m+1][n+1];
+			}
+		}
+		img_out[i*width+j] = sum;
+		
+	}
+}	
+}		
+
+void sobel_norm(double * img_in, long width, long height,
+ double * img_out){
+
+double Sx[3][3] = { { 1./8., 0., -1./8. },
+		    { 1./16., 0., -1./16. },
+		    { 1./8., 0., -1./8. },
+	};
+double Sy[3][3] = { { 1./8., 1./4., 1./8. },
+		    { 0., 0., 0. },
+		    { -1./8., -1./16., -1./8. },
+	};
+
+for(i=1; i < height - 1; i++){
+	for(j=1; j < width -1; j++){
+		double sumx = 0;
+		double sumy = 0;
+		for(m=-1; m <= 1; m++){
+			for (n=-1; n <= 1; n++){
+				sumx += img_in[ (i-m)*width + (j-n)] * Sx[m+1][n+1];
+				sumy += img_in[ (i-m)*width + (j-n)] * Sy[m+1][n+1];
+			}
+		}
+		img_out[i*height+j] = sqrt(sumx*sumx+sumy*sumy);
+	}
+}
+}	
+
+
+double * gaussian2d_create(double sigma, long * size){
+
+
+
+	long M = 1 + 2*ceil(3*sigma);
+	double * H = (double*)malloc(M*M*sizeof(double))
+	
+	for(y = -M/2; y < M/2 + 1; y++){
+		for(x= -M/2; x < M/2 + 1; x++){
+			double sum = 0;
+			H[(y + M/2) * M + (X + M/2)] = exp(-(double)(x*x+y*y)/(2*sigma*sigma));
+			sum += H[(y + M/2) * M + (X + M/2)]
+		}
+	}
+	
+	for(u=0; u < M*M - 1; u++) H[u] = H[u] / sum;
+	*size = M;
+	return H;  
+}
+
+void convolution2d(double * img_in, long width, long height
+ double * mask2d, long tx, long ty,
+ double * img_out){
+
+	for(int u =0; u < height * width; u++) img_out[u] = 0.0;
+	for(i= ty/2; i < height - ty/2; i++){
+		for(j = tx/2; j < width - tx/2; j++){
+			double sum = 0;
+			for(m = -ty/2; m < ty/2 + 1; m++)
+				for(n = -tx/2; n < tx/2 + 1; n++)
+					sum += img_in[ (i - m)*width + (j - n)] * mask2d[ (n + i)*tx + (m + j)]
+				}
+			}
+		img_out[i + j * width] = sum;
+		}
+	}
+}
+
+void filter2d_gaussian(double * img_in, long width, long height,
+ double sigma,
+ double * img_out){
+
+	double * filter = NULL;
+	gaussian2d_create(sigma, &t);
+	convolution2d(img_in, width, height, mask2d, t, t, img_out);
+	free(filter);
+}
+
+
+
+double * gaussian1d_create(double sigma, long * size){
+
+
+	long M = 1 + 2*ceil(3*sigma);
+	double * H = (double*)malloc(M*sizeof(double))
+	double sum=0;
+	for(x= - M/2; x < M/2; x++){
+		H[x + M/2] = exp(-(double)(x*x)/(2.0*sigma*sigma);
+		sum += H[x + M/2]
+	}
+	for(u=0; u < M; u++) H[u] /= sum;
+return H;
+}
+		
+void img_get_row(double * img, long width, long height,
+ long no,
+ double * v){
+
+	
+	for(long i = 0; i < width; i++){
+		v[i] = img[ no * width + i];
+	}
+}
+
+void img_set_row(double * img, long width, long height,
+ long no,
+ double * v){
+
+
+	for(long i = 0; i < width; i++){
+		img[ no * width + i] = v[i] 
+	}
+}
+
+
+void img_get_column(double * img, long width, long height,
+ long no,
+ double * v){
+
+	for(long i = 0; i < height; i++){
+		v[i] = img[ no + i*width];
+	}
+}
+ 
+void img_set_column(double * img, long width, long height,
+ long no,
+ double * v){
+	
+	for(long i = 0; i < height; i++){
+		img[ no + i*width] = v[i];
+	}
+}
+
+void convolution1d(double * v_in, long size,
+ double * mask1d, long t,
+double * v_out){
+
+
+
+	for(long i = 0; i < size; i++){
+		v_out[i]=0.0;
+	}
+
+
+	for(long i = t/2; i < size - t/2; i++){
+		double sum=0;
+		for( j = -t/2; j < t/2; j++){
+			sum +=  v_in[i - j] * mask1d[j + t/2];
+		}
+		v_out[i] = sum;
+	}
+}
+
+
+//pointeurs
+void img_mirror_horizontal(double * img_in,
+long width, long height,
+ double * img_out){
+	
+	img_out += width - 1;
+
+for(long i = 0; i < height * width; i++){
+	for(long j = 0; j < width; j++){
+		*(img_out--) = *(img_in++);
+		img_out += 2*width;
+	}
+}
+	
+
+void img_mirror_horizontal(double * img_in,
+long width, long height,
+ double * img_out){
+
+for (long i = 0; i < height ; i++) {
+	for (long j = 0; j< width; j++) {
+	
+	img_out[i*width + width -1-j] = img_in[i*width + j];
+	}
+}
+}
+
+typedef struct {
+unsigned char r;
+unsigned char g;
+unsigned char b;
+unsigned char a;
+ } RGBA;
+
+//avec pointeurs
+
+void img_extract_area(unsigned char * img_color_in,
+ long width, long height,
+ long x, long y, long dx, long dy,
+ unsigned char * img_color_out){
+
+RGBA * rgba_in = (RGBA *)img_color_in, * rgba_out = (RGBA *)img_color_out;
+
+rgba_in += y*width + x
+
+for(long i=0; i < dx * dy; i++){
+	for(long j = 0; j < dy; j++){
+		*(rgba_out++) = *(rgba_in++);
+		rgba_in += width - dx
+	}
+}
+
+
+void img_extract_area(unsigned char * img_color_in,
+ long width, long height,
+ long x, long y, long dx, long dy,
+ unsigned char * img_color_out){
+
+RGBA * rgba_in = (RGBA *)img_color_in, * rgba_out = (RGBA *)img_color_out;
+
+
+for(long j=0; j < dx; j++){
+	for(long i = 0; i < dy; i++){
+		rgba_out[i*dx + j] = rgba_in[(y+i)*width + x + i];
+	}
+}
+}
+
+
+
+
+
+
+
+
+
