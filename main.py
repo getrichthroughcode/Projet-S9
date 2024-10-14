@@ -24,6 +24,7 @@ Phi = np.array([[1,np.sin(w*T)/w,(1-np.cos(w*T))/w**2,0,0,0],
                 [0,0,0,0,-w*np.sin(w*T)/w**2,np.cos(w*T)]])
 
 x= np.zeros((6,N))
+
 x[:,0]=np.array([0,1,0,1,0,1])
 
 for k in range(1,N):
