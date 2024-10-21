@@ -37,27 +37,29 @@ def Singer_gen(length, T, x_0,alpha,sigma_m ):
     return L
 
 length = 100
-alpha=0.001
+alpha=1000
 sigma_m = 1
 T=1
 x_0=np.array([[0],[0],[0]])
 
 x=Singer_gen(length, T, x_0,alpha,sigma_m)
 y=Singer_gen(length, T, x_0,alpha,sigma_m)
-# z = MUA_gen(length, T, x_0)
+z = Singer_gen(length, T, x_0,alpha,sigma_m)
 x_coords = [xi[0, 0] for xi in x]
 y_coords = [yi[0,0] for yi in y]
-# z_coords = [yi[0,0] for yi in z]
+z_coords = [yi[0,0] for yi in z]
+x_accs = [xi[2, 0] for xi in x]
+y_accs = [yi[2,0] for yi in y]
 
 plt.figure()
 plt.plot(x_coords, y_coords, label='Trajectoire (x, y)')
-plt.title('Trajectoire synthétique dans le plan (x, y)')
+plt.title('Trajectoire Singer dans le plan (x, y)')
 plt.xlabel('Position x')
 plt.ylabel('Position y')
 plt.legend()
 plt.grid(True)
 plt.show()
-#
+
 # fig = plt.figure()
 # ax = fig.add_subplot(111, projection='3d')
 # ax.plot3D(x_coords, y_coords, z_coords)
@@ -65,6 +67,21 @@ plt.show()
 # ax.set_xlabel('Position x')
 # ax.set_ylabel('Position y')
 # ax.set_zlabel('Position z')
-
-# Affichage de la figure
 # plt.show()
+
+correlation_x = np.correlate(x_accs, x_accs, mode='full')
+correlation_y= np.correlate(y_accs, y_accs, mode='full')
+lags_x = np.arange(-len(x_accs) + 1, len(x_accs))
+lags_y = np.arange(-len(y_accs) + 1, len(y_accs))
+
+plt.figure(figsize=(10, 6))
+plt.plot(lags_x, correlation_x)
+plt.title("Fonction de corrélation en x")
+plt.grid()
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.plot(lags_y, correlation_y)
+plt.title("Fonction de corrélation en y")
+plt.grid()
+plt.show()
