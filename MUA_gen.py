@@ -16,8 +16,10 @@ def estimate(X_pos):
 
 def MUA_gen(length, T, x_0):
     L=[]
+    n=0.0005
+    q=n*9.81*T
     L.append(x_0)  # Ensure x_0 is a column vector
-    Q = np.array([
+    Q = q* np.array([
         [T**5 / 20, T**4 / 8, T**3 / 6],
         [T**4 / 8, T**3 / 3, T**2 / 2],
         [T**3 / 6, T**2 / 2, T]
@@ -50,14 +52,17 @@ y_coords = [yi[0,0] for yi in y]
 z_coords = [yi[0,0] for yi in z]
 x_accs = [xi[2, 0] for xi in x]
 y_accs = [yi[2,0] for yi in y]
-plt.figure(figsize=(10, 6))
-plt.plot(x_coords, y_coords, label='Trajectoire (x, y)')
-plt.title('Trajectoire synthétique dans le plan (x, y)')
-plt.xlabel('Position x')
-plt.ylabel('Position y')
-plt.legend()
-plt.grid(True)
-plt.show()
+x_vits = [xi[1, 0] for xi in x]
+y_vits = [yi[1,0] for yi in y]
+#
+# plt.figure(figsize=(10, 6))
+# plt.plot(x_coords, y_coords, label='Trajectoire (x, y)')
+# plt.title('Trajectoire synthétique dans le plan (x, y)')
+# plt.xlabel('Position x')
+# plt.ylabel('Position y')
+# plt.legend()
+# plt.grid(True)
+# plt.show()
 #
 # fig = plt.figure()
 # ax = fig.add_subplot(111, projection='3d')
@@ -73,23 +78,46 @@ correlation_y= np.correlate(y_accs, y_accs, mode='full')
 lags_x = np.arange(-len(x_accs) + 1, len(x_accs))
 lags_y = np.arange(-len(y_accs) + 1, len(y_accs))
 
-plt.figure(figsize=(10, 6))
-plt.plot(lags_x, correlation_x)
-plt.title("Fonction de corrélation en x")
-plt.grid()
-plt.show()
-
-plt.figure(figsize=(10, 6))
-plt.plot(lags_y, correlation_y)
-plt.title("Fonction de corrélation en y")
-plt.grid()
-plt.show()
-
-vit_est,acc_est = estimate(x_coords)
-plt.figure(figsize=(10, 6))
-plt.plot(acc_est,label='Estimation')
-plt.plot(x_accs,label='Réelle')
-plt.legend()
-plt.title("Accélération réelle et accélération estimée")
-plt.grid()
-plt.show()
+# plt.figure(figsize=(10, 6))
+# plt.plot(lags_x, correlation_x)
+# plt.title("Fonction de corrélation en x")
+# plt.grid()
+# plt.show()
+#
+# plt.figure(figsize=(10, 6))
+# plt.plot(lags_y, correlation_y)
+# plt.title("Fonction de corrélation en y")
+# plt.grid()
+# plt.show()
+#
+# vit_est_x,acc_est_x = estimate(x_coords)
+# vit_est_y,acc_est_y = estimate(y_coords)
+#
+# plt.figure(figsize=(10, 6))
+# plt.plot(acc_est_x,label='Estimation')
+# plt.plot(x_accs,label='Réelle')
+# plt.legend()
+# plt.title("Accélération réelle et accélération estimée")
+# plt.grid()
+# plt.show()
+#
+#
+# plt.figure(figsize=(10, 6))
+# plt.plot(x_coords, y_coords, label='Trajectoire (x, y)')
+# plt.quiver(x_coords, y_coords, x_vits, y_vits, angles='xy',scale_units='xy', scale=0.5, color='r', label='Vitesse instantanée réel')
+# plt.title('Trajectoire synthétique avec vitesse instantanée réel')
+# plt.xlabel('Position x')
+# plt.ylabel('Position y')
+# plt.legend()
+# plt.grid(True)
+# plt.show()
+#
+# plt.figure(figsize=(10, 6))
+# plt.plot(x_coords, y_coords, label='Trajectoire (x, y)')
+# plt.quiver(x_coords[1:], y_coords[1:], vit_est_x[1:] ,vit_est_y[1:],angles='xy', scale_units='xy', scale=0.5, color='r', label='Vitesse instantanée estimmée')
+# plt.title('Trajectoire synthétique avec vitesses instantanées estimmée')
+# plt.xlabel('Position x')
+# plt.ylabel('Position y')
+# plt.legend()
+# plt.grid(True)
+# plt.show()
