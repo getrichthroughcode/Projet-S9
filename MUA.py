@@ -39,6 +39,7 @@ y_coords = [yi[0, 0] for yi in y]
 u_speeds = [xi[1, 0] for xi in x]  # Speed in the x-direction (index 1)
 v_speeds = [yi[1, 0] for yi in y]  # Speed in the y-direction (index 3)
 
+
 plt.figure(figsize=(10, 6))
 plt.plot(x_coords, y_coords, label='Trajectoire (x, y)', alpha=0.5)
 plt.quiver(x_coords[:-1], y_coords[:-1], u_speeds[:-1], v_speeds[:-1],angles='xy',scale_units='xy', color='r', scale=1, label='Vitesse (u, v)')
