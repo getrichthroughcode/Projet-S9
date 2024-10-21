@@ -4,31 +4,42 @@ import matplotlib.pyplot as plt
 g =9.81
 n = 2
 T = 1
-N = 1028
-w = 2
+N = 100
+omega = 1
 q = n*g*T
+sigma = 1
 
 # circulaire
 
 
-Q = q * np.array([[T**3/3,T**2/2,0,0],
-                 [T**2/2,T,0,0],
-                 [0,0,T**3/3,T**2/2],
-                 [0,0,T**2/2,T]])
+Phi = np.array([
+    [1, np.sin(omega * T) / omega, 0, -(1 - np.cos(omega * T)) / omega],
+    [0, np.cos(omega * T), 0, -np.sin(omega * T)],
+    [0, (1 - np.cos(omega * T)) / omega, 1, np.sin(omega * T) / omega],
+    [0, np.sin(omega * T), 0, np.cos(omega * T)]
+])
 
-Phi = np.array([[1,np.sin(w*T)/w,(1-np.cos(w*T))/w**2,0,0,0],
-                [0,np.cos(w*T),np.sin(w*T)/w,0,0,0],
-                [0,-w*np.sin(w*T),np.cos(w*T),0,0,0],
-                [0,0,0,1,np.sin(w*T)/w,(1-np.cos(w*T))/w**2],
-                [0,0,0,0,np.cos(w*T),np.sin(w*T)/w],
-                [0,0,0,0,-w*np.sin(w*T)/w**2,np.cos(w*T)]])
+# Define matrix Q
+Q = sigma * np.array([
+    [2 * (omega * T - np.sin(omega * T)) / omega**3, (1 - np.cos(omega * T)) / omega**2, 0, (omega*T - np.sin(omega * T)) / omega**2],
+    [(1 - np.cos(omega * T)) / omega**2, T, - (omega*T - np.sin(omega * T)) / omega**2, 0],
+    [0, - (omega*T - np.sin(omega * T)) / omega**2, 2 * (omega * T - np.sin(omega * T)) / omega**3, (1 - np.cos(omega * T)) / omega**2],
+    [(omega*T - np.sin(omega * T) / omega**2), 0, (1 - np.cos(omega * T)) / omega**2, T]
+])
 
-x= np.zeros((6,N))
-
-x[:,0]=np.array([0,1,0,1,0,1])
-
+x = []
+x.append(np.array([[0],[0],[0],[0]]))
 for k in range(1,N):
-    U = np.random.randn(6,1)
+    U = np.random.randn(4,1)
     R = np.linalg.cholesky(Q)
     B = R.T @ U
-    x[:,k] = Phi@x[:,k-1] + B
+    x.append(np.reshape(Phi @ x[-1],(4,1)) + B)
+
+x_coord = [xi[0,0] for xi in x]
+y_coord = [yi[2,0] for yi in x]
+
+plt.figure(figsize = (8,8))
+plt.plot(x_coord,y_coord)
+plt.show()
+
+
