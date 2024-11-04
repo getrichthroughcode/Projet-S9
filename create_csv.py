@@ -8,7 +8,8 @@ import os
 import csv
 
 
-def create(folder_name, number, type_movement, Period, Sigma, Alpha = 0,
+def create(folder_name, number, type_movement, Period, X_Sigma = 0, X_Alpha = 0,
+           Y_Sigma = 0, Y_Alpha = 0, Z_Sigma = 0, Z_Alpha = 0,
            X=None, Y=None, Z=None, vX=None, vY=None, vZ=None, 
            aX=None, aY=None, aZ=None):
     
@@ -35,8 +36,18 @@ def create(folder_name, number, type_movement, Period, Sigma, Alpha = 0,
         spamwriter.writerow(['Title'] + [title])
         spamwriter.writerow(['type_movement'] + [type_movement])
         spamwriter.writerow(['Period'] + [Period])
-        spamwriter.writerow(['Sigma'] + [Sigma])
-        spamwriter.writerow(['Alpha'] + [Alpha])
+        if X_Sigma is not None:
+            spamwriter.writerow(['X_Sigma'] + [X_Sigma])
+        if X_Alpha is not None:
+            spamwriter.writerow(['X_Alpha'] + [X_Alpha])
+        if Y_Sigma is not None:
+            spamwriter.writerow(['Y_Sigma'] + [Y_Sigma])
+        if Y_Alpha is not None:
+            spamwriter.writerow(['Y_Alpha'] + [Y_Alpha])
+        if Z_Sigma is not None:
+            spamwriter.writerow(['Z_Sigma'] + [Z_Sigma])
+        if Z_Alpha is not None:
+            spamwriter.writerow(['Z_Alpha'] + [Z_Alpha])
         
         # Écriture des données s'il y en a
         if X is not None:
