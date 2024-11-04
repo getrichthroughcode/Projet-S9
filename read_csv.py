@@ -9,20 +9,18 @@ import csv
 
 
 def read_csv(path_folder, path_file, list_name):
-    out = []
+    out = [None] * len(list_name)
     path_file = path_folder + '/' + path_file + ".csv"
     with open(path_file, newline='') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
         for row in spamreader:
             row = row[0]
-            row = row.split(',')
+            row = row.split(',')    
             if row[0] in list_name:
-                print(row)
-                out.append(row[1:])
-                print(out)
+                out[list_name.index(row[0])] = row[1:]
     return out
             
             
         
 if __name__ == "__main__":
-    read_csv("2D_MUA","0_MUA",['X'])
+    print(read_csv("2D_MUA","0_MUA",['X','Title']))
