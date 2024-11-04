@@ -8,12 +8,12 @@ def estimate(X_pos):
     X_acc=[0,0]
     vit = (X_pos[1] - X_pos[0]) / 2
     X_vit.append(vit)
-    for i in range(2,len(X_pos)):
-        vit = (X_pos[i] - X_pos[i-1]) /1
+    for i in range(0,len(X_pos)-2):
+        vit = (X_pos[i+1] - X_pos[i]) /1
         X_vit.append(vit)
-        acc = (X_pos[i] - 2*X_pos[i-1] +X_pos[i-2]) /1
+        acc = (X_pos[i+2] - 2*X_pos[i+1] +X_pos[i]) /1
         X_acc.append(acc)
-    return (X_vit,S.median_filter(X_acc,size = 3))
+    return (X_vit,X_acc) #S.median_filter()
 
 def MUA_gen(length, T, x_0,n):
     L=[]
