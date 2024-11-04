@@ -5,7 +5,6 @@ def MRU_gen(length, T, x_0,n):
     L=[]
     q=n*9.81*T
     if(np.shape(x_0)!=(2,1)):
-        print("x_0 has not the shape (2,1)")
         return []
     L.append(x_0)  # Ensure x_0 is a column vector
     Q = q* np.array([

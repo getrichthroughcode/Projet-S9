@@ -1,8 +1,8 @@
 import numpy as np
-import os
-
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d
+import scipy.ndimage as S
+
 
 def estimate(X_pos):
     X_vit=[0]
@@ -10,21 +10,25 @@ def estimate(X_pos):
     vit = (X_pos[1] - X_pos[0]) / 2
     X_vit.append(vit)
     for i in range(2,len(X_pos)):
-        vit = (X_pos[i] - X_pos[i-1]) /2
+        vit = (X_pos[i] - X_pos[i-1]) /1
         X_vit.append(vit)
-        acc = (X_pos[i] - 2*X_pos[i-1] +X_pos[i-2]) /4
+        acc = (X_pos[i] - 2*X_pos[i-1] +X_pos[i-2]) /1
         X_acc.append(acc)
-    return (X_vit,X_acc)
+    return (X_vit,S.median_filter(X_acc,size = 3))
 
-def MUA_gen(length, T, x_0):
+def MUA_gen(length, T, x_0,n):
     L=[]
+    # n=0.0005
+    q=n*9.81*T
+    if (np.shape(x_0) != (3, 1)):
+        return []
     L.append(x_0)  # Ensure x_0 is a column vector
-    Q = np.array([
+    Q = q* np.array([
         [T**5 / 20, T**4 / 8, T**3 / 6],
         [T**4 / 8, T**3 / 3, T**2 / 2],
         [T**3 / 6, T**2 / 2, T]
     ])
-    print("The white-noise jerk model is used")
+
 
     phi = np.array([[1, T, T ** 2 / 2],
                     [0, 1, T],
