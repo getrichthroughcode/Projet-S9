@@ -23,4 +23,5 @@ def read_csv(path_folder, path_file, list_name):
             
         
 if __name__ == "__main__":
-    print(read_csv("2D_MUA","0_MUA",['X','Title']))
+    print(read_csv("2D_MUA","0_MUA",['X','Title','aX']))
+    

@@ -28,7 +28,7 @@ def Singer_gen(length, T, x_0,alpha,sigma_m ):
         U = np.random.randn(3, 1)  # Generate a random vector
         R = np.linalg.cholesky(Q)  # Cholesky decomposition
         B = R.T @ U         # Generate the noise vector
-        print(B)
+        #print(B)
         # Update x with the new state
 
         x_new  =phi @ L[-1] + B
