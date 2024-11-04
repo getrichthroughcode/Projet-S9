@@ -7,10 +7,7 @@ def simulate_curvilinear_motion(T, length, x_0):
     states[:, 0] = x_0
 
     
-    Q = np.array([[T**3 / 3, T**2 / 2, 0, 0],  
-                  [T**2 / 2, T, 0, 0],
-                  [0, 0, T**3 / 3, T**2 / 2],
-                  [0, 0, T**2 / 2, T]])
+    Q = np.diag([T**3 / 3, T**2 / 2, T**3 / 3, T**2 / 2, 0.1, 0.1])
 
     for k in range(1, length):
         
