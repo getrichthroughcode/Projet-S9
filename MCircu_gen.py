@@ -27,7 +27,7 @@ def Mcircu_gen(length, T, x_0,omega,sigma):
     for k in range(1,length):
         U = np.random.randn(4,1)
         R = np.linalg.cholesky(Q)
-        B = R.T @ U
+        B = R @ U
         x.append(np.reshape(Phi @ x[-1],(4,1)) + B)
     return x
 

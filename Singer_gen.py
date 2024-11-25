@@ -1,9 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d
+from MUA_gen import estimate
+from whiteness_test import *
 
-
-
+#valeur de T => trop gd attention
 def Singer_gen(length, T, x_0,alpha,sigma_m ):
     L=[]
     L.append(x_0)  # Ensure x_0 is a column vector
@@ -27,7 +28,7 @@ def Singer_gen(length, T, x_0,alpha,sigma_m ):
     for i in range(length):
         U = np.random.randn(3, 1)  # Generate a random vector
         R = np.linalg.cholesky(Q)  # Cholesky decomposition
-        B = R.T @ U         # Generate the noise vector
+        B = R @ U         # Generate the noise vector
         # Update x with the new state
 
         x_new  =phi @ L[-1] + B
@@ -49,15 +50,20 @@ if __name__ == "__main__":
     z_coords = [yi[0,0] for yi in z]
     x_accs = [xi[2, 0] for xi in x]
     y_accs = [yi[2,0] for yi in y]
-
-    plt.figure()
-    plt.plot(x_coords, y_coords, label='Trajectoire (x, y)')
-    plt.title('Trajectoire Singer dans le plan (x, y)')
-    plt.xlabel('Position x')
-    plt.ylabel('Position y')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    x_vits = [xi[1, 0] for xi in x]
+    y_vits = [yi[1, 0] for yi in y]
+    x_vits_est, x_accs_est = estimate(x_coords)
+    y_vits_est, y_accs_est = estimate(y_coords)
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(x_coords, y_coords, label='Trajectoire (x, y)')
+    # plt.quiver(x_coords, y_coords, x_vits, y_vits, angles='xy', scale_units='xy', scale=0.5, color='r',
+    #            label='Vitesse instantanée réel')
+    # plt.title('Trajectoire synthétique avec vitesse instantanée réel')
+    # plt.xlabel('Position x')
+    # plt.ylabel('Position y')
+    # plt.legend()
+    # plt.grid(True)
+    # plt.show()
 
     # fig = plt.figure()
     # ax = fig.add_subplot(111, projection='3d')
@@ -68,19 +74,36 @@ if __name__ == "__main__":
     # ax.set_zlabel('Position z')
     # plt.show()
 
-    correlation_x = np.correlate(x_accs, x_accs, mode='full')
+    correlation_x = np.correlate(x_accs, x_accs, mode='full')[len(x_accs)-1:]
     correlation_y= np.correlate(y_accs, y_accs, mode='full')
     lags_x = np.arange(-len(x_accs) + 1, len(x_accs))
     lags_y = np.arange(-len(y_accs) + 1, len(y_accs))
 
     plt.figure(figsize=(10, 6))
-    plt.plot(lags_x, correlation_x)
-    plt.title("Fonction de corrélation en x")
+    plt.plot( x_vits_est,label='Estimation')
+    plt.plot(x_vits,label='Reelle')
+    plt.title("Comparaison vitesse x")
+    plt.legend()
     plt.grid()
     plt.show()
 
     plt.figure(figsize=(10, 6))
-    plt.plot(lags_y, correlation_y)
-    plt.title("Fonction de corrélation en y")
+    plt.plot( x_accs_est, label='Estimation')
+    plt.plot(x_accs, label='Reelle')
+    plt.title("Comparaison acceleration x")
     plt.grid()
     plt.show()
+
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(lags_x, correlation_x)
+    # # plt.plot(lags_x,np.correlate([10*elm for elm in x_accs_est], [10*elm for elm in x_accs_est], mode='full'))
+    # plt.title("Fonction de corrélation en x")
+    # plt.grid()
+    # plt.show()
+    #
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(lags_y, correlation_y)
+    # # plt.plot(lags_y,np.correlate([10*elm for elm in y_accs_est], [10*elm for elm in y_accs_est], mode='full'))
+    # plt.title("Fonction de corrélation en y")
+    # plt.grid()
+    # plt.show()

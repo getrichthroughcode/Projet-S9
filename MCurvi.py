@@ -38,3 +38,6 @@ if __name__ == "__main__":
     states = simulate_curvilinear_motion(T, length, x_0)
     x_coords_curvi = [xi[0] for xi in states]
     y_coords_curvi = [yi[2] for yi in states]
+    plt.figure(figsize=(8, 8))
+    plt.plot(x_coords_curvi, y_coords_curvi)
+    plt.show()
