@@ -74,4 +74,139 @@ def SampEn(Sig, m=2, tau=1, r=None, Logx=np.exp(1), Vcp=False):
             return Samp, A, B, (Vcp, Ka, Kb)
         
         else:
-            return Samp, A, B        
+            return Samp, A, B    
+
+def Distx(Vex, r):
+    Nt = Vex.shape[0]
+    Counter = np.zeros((Nt-1,Nt-1),dtype=bool)
+    for x in range(Nt-1):
+         Counter[x,x:] = np.all(abs(Vex[x+1:,:] - Vex[x,:]) <= r, axis=1)
+     
+    return Counter
+
+       
+
+def MvSampEn(Data, m=None, tau=None, r=0.2, Norm=False, Logx=np.exp(1)):
+    Data = np.squeeze(Data)
+    assert Data.shape[0]>10 and Data.ndim==2 and Data.shape[1]>1,  "Data:   must be an NxM numpy matrix where N>10 and M>1"
+    N, Dn = Data.shape 
+    if m is None:    m = 2*np.ones(Dn, dtype=int)
+    if tau is None:  tau = np.ones(Dn, dtype=int)
+    m = m.astype(int)
+    tau = tau.astype(int) 
+  
+    # and np.issubdtype(m.dtype, np.integer)
+    # and np.issubdtype(tau.dtype, np.integer)
+    assert isinstance(m,np.ndarray) and all(m>0) and m.size==Dn and m.ndim==1, "m:     must be numpy vector of M positive integers"
+    assert isinstance(tau,np.ndarray) and all(tau>0) and tau.size==Dn and tau.ndim==1, "tau:   must be numpy vector of M positive integers"
+    assert isinstance(r,(int,float)) and (r>=0), "r:     must be a positive value"
+    assert isinstance(Logx,(int,float)) and (Logx>0), "Logx:     must be a positive value"
+    assert isinstance(Norm,bool), "Norm:     must be a Boolean"    
+
+    if Norm: Data = Data/np.std(Data,axis=0)
+    
+    Nx = N - max((m-1)*tau)
+    Ny = N - max(m*tau)       
+    Vex = np.zeros((Nx,sum(m)))
+    q = 0
+    for k in range(Dn):
+        for p in range(m[k]):
+            Vex[:,q] = Data[p*tau[k]:Nx+p*tau[k],  k]
+            q += 1
+            
+    Count0 = Distx(Vex,r)
+    B0 = np.sum(Count0)/(Nx*(Nx-1)/2)
+            
+    B1 = np.zeros(Dn)
+    Vez = np.inf*np.ones((1,sum(m)+1));
+    Temp = np.cumsum(m)
+    for k in range(Dn):
+        Sig = np.expand_dims(Data[m[k]*tau[k]:Ny+m[k]*tau[k], k],1)
+        Vey = np.hstack((Vex[:Ny, :Temp[k]], Sig, Vex[:Ny, Temp[k]:]))
+        Vez = np.vstack((Vez, Vey))
+        Count1 = Distx(Vey, r)
+        B1[k] = np.sum(Count1)/(Ny*(Ny-1)/2)
+    Vez = Vez[1:,:]
+    Count1 = Distx(Vez, r)
+    Bt = np.sum(Count1)/(Dn*Ny*((Dn*Ny)-1)/2)
+       
+    with np.errstate(divide='ignore', invalid='ignore'):
+        Samp = -np.log(Bt/B0)/np.log(Logx) 
+   
+    return Samp, B0, Bt, B1 
+
+
+
+def XSampEn(*Sig, m=2, tau=1, r=None, Logx=np.exp(1), Vcp=False):
+    assert len(Sig)<=2,  """Input arguments to be passed as data sequences:
+        - A single Nx2 numpy matrix with each column representing Sig1 and Sig2 respectively.       \n or \n
+        - Two individual numpy vectors representing Sig1 and Sig2 respectively."""
+    if len(Sig)==1:
+        Sig = np.squeeze(Sig)
+        assert max(Sig.shape)>10 and min(Sig.shape)==2,  """Input arguments to be passed as data sequences:
+            - A single Nx2 numpy matrix with each column representing Sig1 and Sig2 respectively.       \n or \n
+            - Two individual numpy vectors representing Sig1 and Sig2 respectively."""
+        if Sig.shape[0] == 2:
+            Sig = Sig.transpose()  
+        S1 = Sig[:,0]; S2 = Sig[:,1]     
+        
+    elif len(Sig)==2:
+        S1 = np.squeeze(Sig[0])
+        S2 = np.squeeze(Sig[1])
+        
+    N  = S1.shape[0]
+    N2 = S2.shape[0]
+    if r is None:
+        r = 0.2*np.sqrt((np.var(S1)*(N-1) + np.var(S2)*(N2-1))/(N+N2-1))
+     
+    assert N>10 and N2>10,  "Sig1/Sig2:   Each sequence must be a numpy vector (N>10)"
+    assert isinstance(m,int) and (m > 0), "m:     must be an integer > 0"
+    assert isinstance(tau,int) and (tau > 0), "tau:   must be an integer > 0"
+    assert isinstance(r,(int,float)) and r>=0, "r:     must be a positive value"
+    assert isinstance(Logx,(int,float)) and (Logx>0), "Logx:     must be a positive value"
+    assert isinstance(Vcp,bool), "Vcp:     must be a Boolean"    
+
+    M = np.hstack((m*np.ones(N-m*tau), np.repeat(np.arange(m-1,0,-1),tau)))   
+    Counter = 1*(abs(np.expand_dims(S1,axis=1) - np.expand_dims(S2,axis=0))<= r)
+    A = np.zeros(m+1)
+    B = np.zeros(m+1)
+    A[0] = np.sum(Counter)
+    B[0] = N*N2
+    
+    for n in range(M.shape[0]):
+        ix = np.where(Counter[n, :] == 1)[0]        
+        for k in range(1,int(M[n]+1)):              
+            ix = ix[ix + (k*tau) < N2]
+            if not len(ix):    break  
+            p1 = np.tile(S1[n: n+1+(tau*k):tau], (ix.shape[0], 1))                       
+            p2 = S2[np.expand_dims(ix,axis=1) + np.arange(0,(k*tau)+1,tau)]
+            ix = ix[np.amax(abs(p1 - p2), axis=1) <= r] 
+            Counter[n, ix] += 1
+    
+    for k in range(1, m+1):
+        A[k] = np.sum(Counter > k)
+        B[k] = np.sum(Counter >= k)
+    
+    with np.errstate(divide='ignore', invalid='ignore'):
+        XSamp = -np.log(A/B)/np.log(Logx)
+ 
+    
+    if Vcp:
+        T1,T2 = np.expand_dims(np.where(Counter>m),axis=1)
+        Ka = np.triu(abs(T1-T1.T)<=m*tau,1) + np.triu(abs(T2-T2.T)<=m*tau,1) 
+
+        T1,T2 = np.expand_dims(np.where(Counter[:,:-m*tau]>=m),axis=1)
+        Kb = np.triu(abs(T1-T1.T)<=(m-1)*tau,1) + np.triu(abs(T2-T2.T)<=(m-1)*tau,1) 
+                    
+        Ka = np.sum(Ka)
+        Kb = np.sum(Kb)
+        CP = A[-1]/B[-1]
+        Vcp = (CP*(1-CP)/B[-1]) + (Ka - Kb*(CP**2))/(B[-1]**2)
+
+        return XSamp, A, B, (Vcp, Ka, Kb)
+    
+    else:
+        return XSamp, A, B  
+    
+
+    
