@@ -209,4 +209,58 @@ def XSampEn(*Sig, m=2, tau=1, r=None, Logx=np.exp(1), Vcp=False):
         return XSamp, A, B  
     
 
-    
+def dcca(ts1, ts2, scales, m=1):
+    """
+    Perform Detrended Cross-Correlation Analysis (DCCA) between two time series.
+
+    Parameters:
+    - ts1, ts2: Input time series (1D numpy arrays of the same length).
+    - scales: List or array of window sizes (integers).
+    - m: Order of the polynomial for detrending (default is 1, linear detrending).
+
+    Returns:
+    - F: Array of fluctuation functions for each scale.
+    """
+    ts1 = np.asarray(ts1, dtype=np.float64)
+    ts2 = np.asarray(ts2, dtype=np.float64)
+
+    if ts1.shape != ts2.shape:
+        raise ValueError("Time series must have the same length.")
+
+    N = len(ts1)
+    X = np.cumsum(ts1 - np.mean(ts1))
+    Y = np.cumsum(ts2 - np.mean(ts2))
+
+    F = np.zeros(len(scales))
+
+    for idx, s in enumerate(scales):
+        if s < m + 2:
+            raise ValueError(f"Scale {s} is too small for polynomial order {m}.")
+
+        segments = N // s
+        cov = []
+
+        for v in range(segments):
+            idx_start = v * s
+            idx_end = idx_start + s
+
+            # Indices for the segment
+            indices = np.arange(idx_start, idx_end)
+
+            # Fit polynomials to the segments
+            coeffs_X = np.polyfit(indices, X[idx_start:idx_end], m)
+            trend_X = np.polyval(coeffs_X, indices)
+            F_X = X[idx_start:idx_end] - trend_X
+
+            coeffs_Y = np.polyfit(indices, Y[idx_start:idx_end], m)
+            trend_Y = np.polyval(coeffs_Y, indices)
+            F_Y = Y[idx_start:idx_end] - trend_Y
+
+            # Compute covariance of residuals
+            cov_seg = np.mean(F_X * F_Y)
+            cov.append(cov_seg)
+
+        # Average covariance over all segments
+        F[idx] = np.sqrt(np.mean(cov))
+
+    return F
