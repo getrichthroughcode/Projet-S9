@@ -220,6 +220,7 @@ def dcca(ts1, ts2, scales, m=1):
 
     Returns:
     - F: Array of fluctuation functions for each scale.
+    
     """
     ts1 = np.asarray(ts1, dtype=np.float64)
     ts2 = np.asarray(ts2, dtype=np.float64)
