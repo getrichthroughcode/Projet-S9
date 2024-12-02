@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d
-from MUA_gen import estimate
+from estimation_param import estimate
 from whiteness_test import *
 
 #valeur de T => trop gd attention
@@ -37,7 +37,7 @@ def Singer_gen(length, T, x_0,alpha,sigma_m ):
     return L
 if __name__ == "__main__":
     length = 100
-    alpha=1000
+    alpha=0.1
     sigma_m = 1
     T=1
     x_0=np.array([[0],[0],[0]])
@@ -74,32 +74,32 @@ if __name__ == "__main__":
     # ax.set_zlabel('Position z')
     # plt.show()
 
-    correlation_x = np.correlate(x_accs, x_accs, mode='full')[len(x_accs)-1:]
+    correlation_x = np.correlate(x_accs, x_accs, mode='full')
     correlation_y= np.correlate(y_accs, y_accs, mode='full')
     lags_x = np.arange(-len(x_accs) + 1, len(x_accs))
     lags_y = np.arange(-len(y_accs) + 1, len(y_accs))
 
-    plt.figure(figsize=(10, 6))
-    plt.plot( x_vits_est,label='Estimation')
-    plt.plot(x_vits,label='Reelle')
-    plt.title("Comparaison vitesse x")
-    plt.legend()
-    plt.grid()
-    plt.show()
-
-    plt.figure(figsize=(10, 6))
-    plt.plot( x_accs_est, label='Estimation')
-    plt.plot(x_accs, label='Reelle')
-    plt.title("Comparaison acceleration x")
-    plt.grid()
-    plt.show()
-
     # plt.figure(figsize=(10, 6))
-    # plt.plot(lags_x, correlation_x)
-    # # plt.plot(lags_x,np.correlate([10*elm for elm in x_accs_est], [10*elm for elm in x_accs_est], mode='full'))
-    # plt.title("Fonction de corrélation en x")
+    # plt.plot( x_vits_est,label='Estimation')
+    # plt.plot(x_vits,label='Reelle')
+    # plt.title("Comparaison vitesse x")
+    # plt.legend()
     # plt.grid()
     # plt.show()
+    #
+    # plt.figure(figsize=(10, 6))
+    # plt.plot( x_accs_est, label='Estimation')
+    # plt.plot(x_accs, label='Reelle')
+    # plt.title("Comparaison acceleration x")
+    # plt.grid()
+    # plt.show()
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(lags_x, correlation_x)
+    # plt.plot(lags_x,np.correlate([10*elm for elm in x_accs_est], [10*elm for elm in x_accs_est], mode='full'))
+    plt.title("Fonction de corrélation en x")
+    plt.grid()
+    plt.show()
     #
     # plt.figure(figsize=(10, 6))
     # plt.plot(lags_y, correlation_y)

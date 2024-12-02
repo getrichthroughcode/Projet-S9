@@ -51,7 +51,7 @@ if __name__ == "__main__":
     # x_vits_MRU = [xi[1, 0] for xi in X_MRU]
     # y_vits_MRU = [yi[1, 0] for yi in X_MRU]
     #
-    # vit_est_x_MRU, acc_est_x_MRU = estimate(x_coords_MRU)
+    vit_est_x_MRU, acc_est_x_MRU = estimate(x_coords_MRU)
     # vit_est_y_MRU, acc_est_y_MRU = estimate(y_coords_MRU)
     #
     # correlation_x_MRU = np.correlate(acc_est_x_MRU, acc_est_x_MRU,'full')[len(acc_est_x_MRU)-1 :]

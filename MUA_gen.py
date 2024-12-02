@@ -1,4 +1,5 @@
 import numpy as np
+from estimation_param import *
 import matplotlib.pyplot as plt
 from whiteness_test import *
 import mpl_toolkits.mplot3d
@@ -24,31 +25,35 @@ import scipy.signal as ss
 # l33 = L[2, 2]
 
 
-def MUA_gen(length, T, x_0,n):
-    L=[]
-    # n=0.0005
-    q=n*9.81*T
-    if (np.shape(x_0) != (3, 1)):
-        print("x_0 has not the shape (3,1)")
-        return []
-    L.append(x_0)  # Ensure x_0 is a column vector
-    Q = q* np.array([
+def MUA_gen(length, T, x_0, n):
+    # Vérification de la forme de x_0
+    if x_0.shape != (3,):
+        print("x_0 has not the shape (3,)")
+        return np.empty((3,))  # Retourne un tableau vide si la condition échoue
+
+    # Préallocation pour un tableau contenant toutes les étapes
+    L = np.zeros((length + 1, 3))  # Préallouer un tableau pour tous les états
+    L[0] = x_0  # Initialisation avec l'état initial
+
+    # Paramètres de la simulation
+    q = n * 9.81 * T
+    Q = q * np.array([
         [T**5 / 20, T**4 / 8, T**3 / 6],
         [T**4 / 8, T**3 / 3, T**2 / 2],
         [T**3 / 6, T**2 / 2, T]
     ])
+    phi = np.array([
+        [1, T, T**2 / 2],
+        [0, 1, T],
+        [0, 0, 1]
+    ])
 
-
-    phi = np.array([[1, T, T ** 2 / 2],
-                    [0, 1, T],
-                    [0, 0, 1]])
+    # Boucle principale
+    R = np.linalg.cholesky(Q)  # Cholesky decomposition (invariant dans la boucle)
     for i in range(length):
-        U = np.random.randn(3, 1)  # Generate a random vector
-        R = np.linalg.cholesky(Q)  # Cholesky decomposition
-        B = R @ U         # Generate the noise vector
-        # Update x with the new state
-        x_new  =phi @ L[-1] + B
-        L.append(x_new)
+        U = np.random.randn(3,)  # Génère un vecteur aléatoire
+        B = R @ U  # Génère le bruit
+        L[i + 1] = phi @ L[i] + B  # Calcule le nouvel état
 
     return L
 #afficher vitesse instantanée (fleches)
@@ -56,17 +61,18 @@ if __name__ == "__main__":
     n=1
     T=1
     q=n*T*9.81
-    x_0=np.array([[0],[0],[0]])
+    length = 30000
+    x_0=np.array([0,0,0])
     x=MUA_gen(length, T, x_0,n)
     y=MUA_gen(length, T, x_0,n)
     z = MUA_gen(length, T, x_0,n)
-    x_coords = [xi[0, 0] for xi in x]
-    y_coords = [yi[0,0] for yi in y]
-    z_coords = [yi[0,0] for yi in z]
-    x_accs = [xi[2, 0] for xi in x]
-    y_accs = [yi[2,0] for yi in y]
-    x_vits = [xi[1, 0] for xi in x]
-    y_vits = [yi[1,0] for yi in y]
+    x_coords = x[:,0]
+    y_coords = y[:,0]
+    z_coords = z[:,0]
+    x_accs = x[:,2]
+    y_accs = y[:,2]
+    x_vits = x[:,1]
+    y_vits = y[:,1]
 
     #
     # plt.figure(figsize=(10, 6))
