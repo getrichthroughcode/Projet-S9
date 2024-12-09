@@ -5,7 +5,7 @@ from whiteness_test import *
 
 
 import numpy as np
-
+# intercorr en 2d
 def MRU_gen(length, T, x_0, n):
     # Vérification de la forme de x_0
     if x_0.shape != (2,):
