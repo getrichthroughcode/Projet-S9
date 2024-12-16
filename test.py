@@ -1,45 +1,12 @@
 from cmath import log10
 import numpy as np
+from MUA_gen import *
 from MRU_gen import *
 import time
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d
 from estimation_param import *
-def MRU_gen(length, T, x_0, n):
-    # Vérification de la forme de x_0
-    if x_0.shape != (2,):
-        print("x_0 has not the shape (2,)")
-        return np.empty((2,))  # Retourne un tableau vide si la condition échoue
 
-    # Préallocation pour un tableau contenant toutes les étapes
-    L = np.zeros((length + 1, 2))  # Préallouer un tableau pour tous les états
-    L[0] = x_0  # Initialisation avec l'état initial
-
-    # Paramètres de la simulation
-    q = n * 9.81 * T
-    Q = q * np.array([
-        [T**3 / 3, T**2 / 2],
-        [T**2 / 2, T]
-    ])
-    phi = np.array([
-        [1, T],
-        [0, 1]
-    ])
-
-    # Boucle principale
-    R = np.linalg.cholesky(Q)  # Cholesky decomposition (invariant dans la boucle)
-    for i in range(length):
-        U = np.random.randn(2,)  # Génère un vecteur aléatoire
-        B = R @ U  # Génère le bruit
-        L[i + 1] = phi @ L[i] + B  # Calcule le nouvel état
-
-    return L
-def MRU_param_estimation(X_pos,T):
-    vit_est,acc_est = estimate(X_pos)
-    corr = np.correlate(acc_est, acc_est, "full") / len(acc_est)
-    mat_det_sig = np.array([[46/(3*T**9),133/(6*T**9),-10/(3*T**9)], [11/(18*T**6),-22/(9*T**6),17/(36*T**6)]])
-    sigma = 36*T**10/501 * mat_det_sig@(corr[len(corr)//2:len(corr)//2 +3 ]).T
-    return sigma
 def bruitage(S,SNR):
 
     length = len(S)
@@ -54,10 +21,12 @@ def bruitage(S,SNR):
 if __name__ == '__main__':
     # length = 10000  # Nb d'echantillons
     T = 1  # période d'échantillonage
-    x_0 = np.array([0, 0])  # Vecteur initial
+    x_0 = np.array([0,0])  # Vecteur initial
     n = 0.05  # Pour fixer q = n*9.81*T
-    SNR_list = np.arange(0, 1001, 10)
-    length_list = np.arange(0,20000,500)
+    # SNR_list = [500, 400, 300, 200, 100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 9, 8, 7, 6, 5]
+    SNR_list = np.linspace(500,400,10)
+    length_list = np.linspace(10000,20000,10,dtype='int')
+    # length_list = [20000, 15000, 10000, 5000, 1000, 500, 100, 50, 10]
     N_moy = 100
     accu = np.zeros((len(length_list),len(SNR_list), N_moy,2))
     l = 0
@@ -69,20 +38,20 @@ if __name__ == '__main__':
             print(length)
             start = time.perf_counter()
             for i in range(N_moy):
-                X_MRU = MRU_gen(length, T, x_0, n)
-                sigma_c,bruit = bruitage(X_MRU[:,0], SNR_list[SNR_id])
-                erreur_SNR = SNR_list[SNR_id] - 10*np.log10(np.mean(X_MRU[:,0]**2)/np.mean(bruit**2))
+                print(i)
+                X_MUA = MRU_gen(length, T, x_0, n)
+                sigma_c,bruit = bruitage(X_MUA[:,0], SNR_list[SNR_id])
+                erreur_SNR = SNR_list[SNR_id] - 10*np.log10(np.mean(X_MUA[:,0]**2)/np.mean(bruit**2))
                 sigma_th = np.array([n*9.81*T,sigma_c])
-                sigma = MRU_param_estimation(X_MRU[:,0] + bruit,T)
+                sigma = MRU_param_estimation(X_MUA[:,0] + bruit,T)
 
 
-                erreur_est= (np.abs(sigma_th - sigma)/sigma_th)
+                erreur_est= (np.abs(sigma_th - sigma)/sigma_th)*100
 
                 accu[l,SNR_id,i,:]= erreur_est
 
             end = time.perf_counter()
             # print(end-start)
-
         l+=1
 
 
@@ -95,33 +64,36 @@ mean_sig_bruit= np.mean(sig_bruit,axis=2)
 mean_all_v1 = np.mean(accu,axis=3)
 mean_all_fin = np.mean(mean_all_v1,axis=2)
 #%%
-test_accu =np.load("4_accu_l_SNR.npy")
+#Load
+test_accu =np.load("accu_plot_fin.npy")
 test_mean_all_v1 = np.mean(test_accu,axis=3)
 test_mean_all_fin = np.mean(test_mean_all_v1,axis=2)
+
 #%%
+# SNR_list = [500,400,300,200,100,90,80,70,60,50,40,30,20,10,9,8,7,6,5]
+# length_list = [20000,15000,10000,5000,1000,500,100,50,10]
 from mpl_toolkits.mplot3d import Axes3D
-# SNR, Length = np.meshgrid(SNR_list, length_list)
+SNR, Length = np.meshgrid(SNR_list, length_list)
 
-mean_all_fin_log = np.log10(mean_all_fin)<1
+mean_all_fin_log = np.log10(mean_all_fin)#5%
+# mean_all_fin_log = np.log10(mean_sig_bruit)<(1)
 
+
+SNR_list_log = np.log10(SNR_list)
+length_list_log = np.log10(length_list)
+
+# Création de la heatmap
 plt.figure(figsize=(10, 8))
-plt.imshow(mean_all_fin_log, aspect='auto', origin='lower',
-           extent=[min(length_list), max(length_list), min(SNR_list), max(SNR_list)],
-           cmap='gist_ncar')
+plt.imshow(np.flip(np.flip(mean_all_fin_log,axis=1),axis=0), aspect='auto', cmap='seismic', origin='lower',
+           extent=[SNR_list_log.min(), SNR_list_log.max(), length_list_log.min(), length_list_log.max()])#gist_ncar
 
-# Appliquer une échelle logarithmique sur les axes
-plt.xscale('log')  # Échelle logarithmique pour l'axe SNR
-plt.yscale('log')
+# Ajuster les ticks des axes pour afficher les valeurs originales
+plt.colorbar(label='log10(mean_all_fin)')
+plt.xticks(SNR_list_log, labels=SNR_list, rotation=45)
+plt.yticks(length_list_log, labels=length_list)
+plt.xlabel('SNR (log10)')
+plt.ylabel('Length (log10)')
+plt.title('Heatmap: log10(mean_sig_bruit) with log-scaled axes')
 
-# Ajouter des labels et une barre de couleur
-plt.colorbar(label='Valeurs (z) de mean_all_fin')
-plt.title('Heatmap de mean_all_fin (Échelle logarithmique) inf 10%')
-plt.xlabel('lengt (log)')
-plt.ylabel('SNR ')
-
-# Personnalisation des ticks pour l'échelle logarithmique
-plt.xticks(length_list, rotation=45)
-plt.yticks(SNR_list)
-plt.grid(False)
-plt.tight_layout()
+# Affichage
 plt.show()

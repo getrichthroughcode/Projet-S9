@@ -3,7 +3,7 @@ from estimation_param import *
 import matplotlib.pyplot as plt
 from whiteness_test import *
 import mpl_toolkits.mplot3d
-
+from scipy.signal import correlate
 import scipy.signal as ss
 # T=1
 # n=1
@@ -64,53 +64,19 @@ if __name__ == "__main__":
     length = 30000
     x_0=np.array([0,0,0])
     x=MUA_gen(length, T, x_0,n)
-    y=MUA_gen(length, T, x_0,n)
-    z = MUA_gen(length, T, x_0,n)
+
     x_coords = x[:,0]
     y_coords = y[:,0]
-    z_coords = z[:,0]
     x_accs = x[:,2]
-    y_accs = y[:,2]
     x_vits = x[:,1]
-    y_vits = y[:,1]
 
-    #
-    # plt.figure(figsize=(10, 6))
-    # plt.plot(x_coords, y_coords, label='Trajectoire (x, y)')
-    # plt.title('Trajectoire synthétique dans le plan (x, y)')
-    # plt.xlabel('Position x')
-    # plt.ylabel('Position y')
-    # plt.legend()
-    # plt.grid(True)
-    # plt.show()
-    #
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.plot3D(x_coords, y_coords, z_coords)
-    # ax.set_title('Trajectoire 3D')
-    # ax.set_xlabel('Position x')
-    # ax.set_ylabel('Position y')
-    # ax.set_zlabel('Position z')
-    # plt.show()
-
-    # correlation_x = auto_coord(x_accs)
-    # correlation_y= auto_coord(y_accs)
-    lags_x = np.arange(-len(x_accs) + 1, len(x_accs))
-    lags_y = np.arange(-len(y_accs) + 1, len(y_accs))
-
-    # plt.figure(figsize=(10, 6))
-    # plt.plot(lags_x, correlation_x)
-    # plt.title("Fonction de corrélation en x")
-    # plt.grid()
-    # plt.show()
-    #
-
+    plt.plot(x_coords)
+    plt.title("Trajectoire uniformément accélérrer avec\n length = {:.4f} et q={:.4f}".format(length,q))
 
     vit_est_x,acc_est_x = estimate(x_coords)
-    vit_est_y,acc_est_y = estimate(y_coords)
 
     jerk_est_x,_ = estimate(acc_est_x)
-    test_corr = np.correlate(jerk_est_x, jerk_est_x, "full") / len(jerk_est_x)
+    test_corr = correlate(jerk_est_x, jerk_est_x, mode="full", method="fft") / len(jerk_est_x)
     R_th = np.zeros_like(test_corr)
     R_th[len(test_corr) // 2] = 33/60 * q/T
     R_th[len(test_corr) // 2 - 1] = 13/60 * q/T
@@ -127,49 +93,56 @@ if __name__ == "__main__":
 
     plt.grid()
     plt.show()
-    # plt.figure(figsize=(10, 6))
-    # plt.plot( auto_coord(jerk_est_x))
-    # plt.title("Fonction de corrélation du jerk")
-    # plt.grid()
-    # plt.show()
-    #
-    #
-    # print("toto")
-    # plt.figure(figsize=(10, 6))
-    # plt.plot(acc_est_x,label='Estimation')
-    # plt.plot(x_accs,label='Réelle')
-    # plt.legend()
-    # plt.title("Accélération réelle et accélération estimée")
-    # plt.grid()
-    # plt.show()
-    #
-    # print("toto")
-    # plt.figure(figsize=(10, 6))
-    # plt.plot(vit_est_x, label='Estimation')
-    # plt.plot(x_vits, label='Réelle')
-    # plt.legend()
-    # plt.title("Vitesse réelle et vitesse estimée")
-    # plt.grid()
-    # plt.show()
-    #
-    # #
-    # #
-    # plt.figure(figsize=(10, 6))
-    # plt.plot(x_coords, y_coords, label='Trajectoire (x, y)')
-    # plt.quiver(x_coords, y_coords, x_vits, y_vits, angles='xy',scale_units='xy', scale=0.5, color='r', label='Vitesse instantanée réel')
-    # plt.title('Trajectoire synthétique avec vitesse instantanée réel')
-    # plt.xlabel('Position x')
-    # plt.ylabel('Position y')
-    # plt.legend()
-    # plt.grid(True)
-    # plt.show()
-    #
-    # plt.figure(figsize=(10, 6))
-    # plt.plot(x_coords, y_coords, label='Trajectoire (x, y)')
-    # plt.quiver(x_coords[1:], y_coords[1:], vit_est_x[1:] ,vit_est_y[1:],angles='xy', scale_units='xy', scale=10, color='r', label='Vitesse instantanée estimmée')
-    # plt.title('Trajectoire synthétique avec vitesses instantanées estimmée')
-    # plt.xlabel('Position x')
-    # plt.ylabel('Position y')
-    # plt.legend()
-    # plt.grid(True)
-    # plt.show()
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(acc_est_x,"x",label='Estimation')
+    plt.plot(x_accs,label='Réelle')
+    plt.legend()
+    plt.title("Accélération réelle et accélération estimée")
+    plt.grid()
+    plt.show()
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(acc_est_x[0:50],"x",label='Estimation')
+    plt.plot(x_accs[0:50],label='Réelle')
+    plt.legend()
+    plt.title("Accélération réelle et accélération estimée (zoom)")
+    plt.grid()
+    plt.show()
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(vit_est_x,"x", label='Estimation')
+    plt.plot(x_vits, label='Réelle')
+    plt.legend()
+    plt.title("Vitesse réelle et vitesse estimée")
+    plt.grid()
+    plt.show()
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(vit_est_x[0:50],"x", label='Estimation')
+    plt.plot(x_vits[0:50], label='Réelle')
+    plt.legend()
+    plt.title("Vitesse réelle et vitesse estimée (zoom)")
+    plt.grid()
+    plt.show()
+    
+    length = len(X_MUA[:,0])
+    sigma_n = 10
+    noise = np.sqrt(sigma_n)*np.random.randn(length,)
+    x_cood_bruit= X_MUA[:,0]+ noise
+    vit_est_x_RUA_b, acc_est_x_MUA_b = estimate(x_cood_bruit)
+    test_corr= correlate(acc_est_x_MUA_b, acc_est_x_MUA_b, mode="full", method="fft") / len(acc_est_x_MRU_b)
+    R_th = np.zeros_like(test_corr)
+    R_th[len(test_corr) // 2] = 33/60 * q/T + 20/T**9 * sigma_n
+    R_th[len(test_corr) // 2 - 1] = 13/60 * q/T - 15/T**9 * sigma_n 
+    R_th[len(test_corr) // 2 + 1] = R_th[len(test_corr) // 2 - 1]
+    R_th[len(test_corr) // 2 - 2] = 1/120 * q/T + 6/T**9 * sigma_n 
+    R_th[len(test_corr) // 2 + 2] = R_th[len(test_corr) // 2 - 2]
+    R_th[len(test_corr) // 2 - 3] = 1/T**9 * sigma_n 
+    R_th[len(test_corr) // 2 + 3] = R_th[len(test_corr) // 2 - 3]
+    plt.plot(np.linspace(-10,10,num=21),test_corr[len(test_corr)//2 -10 : len(test_corr)//2 +11],label = "Générer")
+    plt.plot(np.linspace(-10,10,num=21),R_th[len(R_th)//2 -10 : len(R_th)//2 +11],'x',label = "Théorique")
+    plt.legend()
+    plt.title("Fonction de corrélation de l'accélération bruitée avec \n length = {:.4f},sigma_n = {:.4f} et q={:.4f} ".format(length,sigma_n,q))
+    
+  
