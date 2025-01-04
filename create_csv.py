@@ -8,7 +8,8 @@ import os
 import csv
 
 
-def create(folder_name, number, type_movement, Nb_sample,
+def create(folder_name, number, type_movement,
+           Classe, Nb_sample,
            Period, n, X_Sigma = 0, X_Alpha = 0,
            Y_Sigma = 0, Y_Alpha = 0, Z_Sigma = 0, Z_Alpha = 0,
            X=None, Y=None, Z=None, vX=None, vY=None, vZ=None, 
@@ -36,6 +37,8 @@ def create(folder_name, number, type_movement, Nb_sample,
         # Écriture de l'entête
         spamwriter.writerow(['Title'] + [title])
         spamwriter.writerow(['type_movement'] + [type_movement])
+        spamwriter.writerow(['Classe'] + [Classe])
+
         spamwriter.writerow(['Nb_sample'] + [Nb_sample])
         spamwriter.writerow(['Period'] + [Period])
         if n is not None:

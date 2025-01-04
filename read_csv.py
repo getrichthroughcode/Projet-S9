@@ -9,6 +9,7 @@ import csv
 
 
 def read_csv(path_folder, path_file, list_name):
+    csv.field_size_limit(100000000)
     out = [None] * len(list_name)
     path_file = path_folder + '/' + path_file + ".csv"
     with open(path_file, newline='') as csvfile:
@@ -27,13 +28,5 @@ def operation_csv_folder(path_folder, name_file, nb_file, func, list_name):
         
         
 if __name__ == "__main__":
-    print(read_csv("Singer","0_Singer",['aX','Title']))
-    ans = read_csv("2D_MUA","0_MUA",['aX','Title'])
-    mean = 0
-    for i in range(len(ans[0])):
-        print(float(ans[0][i]))
-        float(ans[0][i])
-    print(mean/len(ans[0]))
-    
-    
+    print(read_csv("t1D_MUA","70_MUA",['aX','Title','type_movement','Classe']))
     

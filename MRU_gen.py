@@ -17,7 +17,7 @@ def MRU_gen(length, T, x_0,n):
     for i in range(length):
         U = np.random.randn(2, 1)  # Generate a random vector
         R = np.linalg.cholesky(Q)  # Cholesky decomposition
-        B = R.T @ U         # Generate the noise vector
+        B = R @ U         # Generate the noise vector
         # Update x with the new state
         x_new  =phi @ L[-1] + B
         L.append(x_new)
