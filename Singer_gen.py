@@ -125,6 +125,10 @@ if __name__ == "__main__":
     plt.plot(np.arange(-10, 11), R_th[len(R_th) // 2 - 10: len(R_th) // 2 + 11], 'x', label='Estimation théorique')
     E = sigma_m ** 2 * np.exp(-np.abs(np.arange(-10, 11)) * alpha)
     plt.plot(np.arange(-10, 11), E,'.' , label='Valeur théorique')
+    rho_estime = estimation_param.Singer_param_estimation(x_coords_Sin, T)
+    alpha_estime = -np.log(rho_estime)/T
+    E_estime = sigma_m ** 2 * np.exp(-np.abs(np.arange(-10, 11)) * alpha_estime)
+    plt.plot(np.arange(-10, 11), E_estime, '--', label='estimation rho')
     plt.title('Comparaison entre la corrélation théorique, la correlation théorique estimée et la corrélation calculée')
     plt.legend()
     plt.grid(True)
@@ -164,4 +168,6 @@ if __name__ == "__main__":
     # Display the combined plot
     plt.tight_layout()  # Adjust layout for better spacing
     plt.show()
-    print(' rho estimé : ', estimation_param.Singer_param_estimation(x_coords_Sin,T))
+
+    print(' rho estimé : ',rho_estime )
+    print('rho theorique ', rho)
