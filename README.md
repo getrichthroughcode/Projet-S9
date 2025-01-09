@@ -18,3 +18,4 @@
     git commit -m "message descriptif"
     git push origin <nom-branch>
 ```
+Si tu lis ça t'es gay 
