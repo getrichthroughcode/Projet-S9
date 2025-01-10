@@ -19,13 +19,6 @@ def estimate(X_pos):
     X_acc.append((X_pos[-1] - 2 * X_pos[-2] + X_pos[-3]) / (1**2))
     return (X_vit,X_acc) #S.median_filter()
 
-def MRU_param_estimation(X_pos,T):
-    vit_est,acc_est = estimate(X_pos)
-    corr = np.correlate(acc_est, acc_est, "full") / len(acc_est)
-    mat_det_sig = np.array([[46/(3*T**9),133/(6*T**9),-10/(3*T**9)], [11/(18*T**6),-22/(9*T**6),17/(36*T**6)]])
-    sigma = 36*T**10/501 * mat_det_sig@(corr[len(corr)//2:len(corr)//2 +3 ]).T
-    return sigma
-
 def Singer_param_estimation(X_pos,T):
     vit_est,acc_est = estimate(X_pos)
     corr = correlate(acc_est, acc_est, "full", method='fft')
@@ -37,39 +30,51 @@ def Singer_param_estimation(X_pos,T):
     corr = corr / len_dyn
     rho = corr[len(corr)//2 + 3:len(corr)//2 + 9]
     ratios = rho[1:]/rho[:-1]
-    return ratios[0]
+    rho_estime = ratios[0]
+    alpha = -np.log(rho_estime) / T
+    q11 = (1 / (2 * alpha ** 5)) * (
+            2 * alpha * T - 2 * alpha ** 2 * T ** 2 + 2 * alpha ** 3 * T ** 3 / 3 - 4 * alpha * T * np.exp(
+        -alpha * T) - np.exp(-2 * alpha * T) + 1)
+    q12 = (1 / (2 * alpha ** 4)) * (alpha ** 2 * T ** 2 + 1 + np.exp(-2 * alpha * T) + np.exp(-alpha * T) * (
+            -2 + 2 * alpha * T) - 2 * alpha * T)
+    q13 = (1 / (2 * alpha ** 3)) * (1 - 2 * alpha * T * np.exp(-alpha * T) - np.exp(-2 * alpha * T))
+    q22 = (1 / (2 * alpha ** 3)) * (2 * alpha * T - 3 + 4 * np.exp(-alpha * T) - np.exp(-2 * alpha * T))
+    q23 = (1 / (2 * alpha ** 2)) * (1 - np.exp(-alpha * T)) ** 2
+    q33 = -(1 / (2 * alpha)) * (np.exp(-2 * alpha * T) - 1)
+    delta = -1 / (T ** 2 * alpha ** 2) * (-1 - alpha * T + 1 / rho_estime)
+    A = 4 / (alpha ** 2 * T ** 2) * np.sinh(alpha * T / 2) ** 2
+    terme_1 = 2 * alpha * q12 * q13 / T - 2 * alpha * q13 / T ** 2 + 2 * alpha * q13 ** 2 * delta / q11
+    terme_2 = 2 * alpha * (q23 - q12 * q13 / q11) / T + 2 * alpha * (q23 - q12 * q13 / q11) ** 2 * delta / (
+            q22 - q12 ** 2 / q11)
+    terme_3 = 2 * alpha * (
+            q33 - q13 ** 2 / q11 - ((q23 - q12 * q13 / q11) / np.sqrt(q22 - q12 ** 2 / q11)) ** 2) * delta
+    terme_4 = 2 * alpha * q11 / T ** 4
+    terme_5 = (np.sqrt(2 * alpha) * q12 / T * np.sqrt(q11) - np.sqrt(2 * alpha * q11) / T ** 2 + delta * (
+            np.sqrt(2 * alpha / q11) * q13)) ** 2
+    terme_6 = (np.sqrt(2 * alpha * (q22 - q12 ** 2 / q11)) / T + delta * (
+            np.sqrt(2 * alpha) * (q23 - q12 * q13 / q11) / np.sqrt(q22 - q12 ** 2 / q11))) ** 2
+    terme_7 = delta ** 2 * 2 * alpha * (
+            q33 - q13 ** 2 / q11 - ((q23 - q12 * q13 / q11) / np.sqrt(q22 - q12 ** 2 / q11)) ** 2)
 
-def MUA_param_estimation(X_pos):
-    vit_est,acc_est = estimate(X_pos)
-    jerk_est,_ = estimate(X_pos)
-    corr = np.correlate(jerk_est, jerk_est, "full") / len(jerk_est)
-    return 0
+    K = A * (A + 2 * (terme_1 + terme_2 + terme_3)) + terme_4 + terme_5 + terme_6 + terme_7
+    sigma_m = np.sqrt(corr[len(corr) // 2] / K)
 
+    alpha_11 = np.sqrt(2 * alpha) * sigma_m * np.sqrt(q11)
+    alpha_21 = np.sqrt(2 * alpha) * sigma_m * q12 / np.sqrt(q11)
+    alpha_22 = np.sqrt(2 * alpha) * sigma_m * np.sqrt(q22 - q12 ** 2 / q11)
+    alpha_31 = np.sqrt(2 * alpha) * sigma_m * q13 / np.sqrt(q11)
+    alpha_32 = np.sqrt(2 * alpha) * sigma_m * (q23 - q12 * q13 / q11) / np.sqrt(q22 - q12 ** 2 / q11)
+    alpha_33 = np.sqrt(2 * alpha) * sigma_m * np.sqrt(
+        q33 - q13 ** 2 / q11 - ((q23 - q12 * q13 / q11) / np.sqrt(q22 - q12 ** 2 / q11)) ** 2)
 
+    B = alpha_11 / T ** 2
+    delta = -1 / (T ** 2 * alpha ** 2) * (-1 - alpha * T + 1 / rho_estime)
+    C = alpha_21 / T - alpha_11 / T ** 2 + alpha_31 * delta
+    D = alpha_22 / T + alpha_32 * delta
+    F = alpha_33 * delta
 
+    R_0 = A * (A * sigma_m ** 2 + 2 * (C * alpha_31 + D * alpha_32 + F * alpha_33)) + B ** 2 + C ** 2 + D ** 2 + F ** 2
+    sigma_n = (corr[len(corr) // 2] - R_0)*T**4/6
 
+    return ratios[0], sigma_m, sigma_n
 
-
-
-
-
-
-
-if __name__ == "__main__":
-    n =1
-    T= 1
-    q = 9.81*n*T
-    Nb_moy = 100
-    length = 30000
-    accu = np.zeros((Nb_moy,2))
-    for i in range(Nb_moy):
-        if(i%10==0):
-            print(i)
-        x_0 = np.array([0, 0])
-        X = MRU_gen(length, T, x_0, n)
-        x_coords = X[:,0]
-        x_coords_bruit = x_coords + np.random.randn(len(x_coords),)
-        accu[i,:]= MRU_param_estimation(x_coords_bruit,T)
-    accu = np.sum(accu,axis=0)/accu.shape[0]
-    error = np.abs(accu - np.array([q,1]))/100
-    print("Erreur d'estimation pour un moyennage de {} avec sigma = {} et sigma_n = {} ,\n sigma_est = {}% et sigma_n_est = {}% ".format(Nb_moy,q,1,error[0],error[1]))
