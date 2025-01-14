@@ -17,6 +17,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from utils.Criterium import *
 from utils.motiongen import *
+from utils.estimate import *
+from utils.plot_simu import *
 
 # Test des fonctions Sample Entropy et DCCA
 
@@ -98,7 +100,7 @@ def simulate_MRU():
     """
     print("<===== Simulation MRU =====>")
     print("---------------------------------------------------------------------------------")
-    print("1.1 Influence de la période d'échantillonnage et du facteur de bruit sur la sample entropy")
+    print("1.1 Influence de la période d'échantillonnage et du facteur de bruit sur la sample entropy de la position")
     print("Simulation effectuée sur les positions exactes du modèle")
     print("---------------------------------------------------------------------------------")
     # Paramètres de simulation fixe
@@ -109,13 +111,13 @@ def simulate_MRU():
 
     # Paramètres à tester
     Ts = [0.01, 0.1, 0.5, 1,10,15,20,60]  # Période d'échantillonnage en secondes
-    n = [1, 2, 5, 10, 15, 20, 30, 50]  # Facteur de bruit
+    n = [1000, 2000, 5000, 10000, 15000, 20000, 30000, 50000]  # Facteur de bruit
     results1_1 = []
     for T in Ts:
         for noise in n:
             samp_pos_all = []
             for i in tqdm.tqdm(range(nrealisations), desc=f"RSimulation pour T={T} s et n={noise}"):
-                L = MRU_gen(N, T, x_0, noise)
+                L = MRU_gen(2000, T, x_0, noise)
                 x = L[:,0]
                 samp = sampen(x, 2, 0.2)
                 samp_pos_all.append(samp)
@@ -125,68 +127,555 @@ def simulate_MRU():
                 'Sample Entropy': np.mean(samp_pos_all),
                 'Std': np.std(samp_pos_all)})    
     results_frame1_1 = pd.DataFrame(results1_1)
+    results_frame1_1.to_csv("results/simulation_1_1.csv", index=False)
+    print("Résultats de simu 1.1 sauvegardés avec succès.")
     print("Fin de la simulation 1.1")
 
+
+
     print("---------------------------------------------------------------------------------")
-    return results_frame1_1
+    print("1.2 Influence du nombre d'échantillons et du facteur de bruit sur la sample entropy de la position")
+    print("Simulation effectuée sur les positions exactes du modèle")
+    print("---------------------------------------------------------------------------------")
+    # Paramètres fixes
+    T = 1.0  # Période d'échantillonnage
+    print(f"Période d'échantillonnage: {T} s")
+    print(f"Nombre de réalisations: {nrealisations}")
+    print(f"Conditions Initiales: {x_0}")
+
+    # Paramètres à tester
+    Ns = [100, 500, 1000, 2000, 5000, 10000]  # Nombre d'échantillons
+    results1_2 = []
+    for N in Ns:
+        for noise in n:
+            samp_pos_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"Simulation pour N={N} et n={noise}"):
+                L = MRU_gen(N, 1.0, x_0, noise)
+                x = L[:,0]
+                samp = sampen(x, 2, 0.2)
+                samp_pos_all.append(samp)
+            results1_2.append({
+                'N': N, 
+                'n': noise,
+                'Sample Entropy': np.mean(samp_pos_all),
+                'Std': np.std(samp_pos_all)})
+    results_frame1_2 = pd.DataFrame(results1_2)
+    results_frame1_2.to_csv("results/simulation_1_2.csv", index=False)
+    print("Résultats de simu 1.2 sauvegardés avec succès.")
+    print("Fin de la simulation 1.2")
 
 
+
+
+    print("---------------------------------------------------------------------------------")
+    print("1.3 Influence de la période d'échantillonnage et du facteur de bruit sur la sample entropy de la vitesse estimée")
+    print("Simulation effectuée sur les vitesses estimées du modèle")
+    print("---------------------------------------------------------------------------------")
+    # Paramètres fixes
+    N_1_3 = 2000
+    print(f"Nombre d'échantillons: {N_1_3}")
+    print(f"Nombre de réalisations: {nrealisations}")
+    print(f"Conditions Initiales: {x_0}")
+    results1_3 = []
+    for T in Ts:
+        for noise in n:
+            samp_pos_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"Simulation pour T={T} et n={noise}"):
+                L = MRU_gen(2000, T, x_0, noise)
+                x = L[:,0]
+                v = estimate_v_retrograde(x, T)
+                samp = sampen(v, 2, 0.2)
+                samp_pos_all.append(samp)
+            results1_3.append({
+                'T': T, 
+                'n': noise,
+                'Sample Entropy v_est': np.mean(samp_pos_all),
+                'Std': np.std(samp_pos_all)})
+    results_frame1_3 = pd.DataFrame(results1_3)
+    results_frame1_3.to_csv("results/simulation_1_3.csv", index=False)
+    print("Résultats de simu 1.3 sauvegardés avec succès.")
+    print("Fin de la simulation 1.3")
+
+
+    print("---------------------------------------------------------------------------------")
+    print("1.4 Influence du nombre d'échantillons et du facteur de bruit sur la sample entropy de la vitesse estimée")
+    print("Simulation effectuée sur les vitesses estimées du modèle")
+    print("---------------------------------------------------------------------------------")
+    # Paramètres fixes
+    print(f"Période d'échantillonnage: {T} s")
+    print(f"Nombre de réalisations: {nrealisations}")
+    print(f"Conditions Initiales: {x_0}")
+
+    results1_4 = []
+
+    for N in Ns:
+        for noise in n:
+            samp_pos_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"Simulation pour N={N} et n={noise}"):
+                L = MRU_gen(N, 1.0, x_0, noise)
+                x = L[:,0]
+                v = estimate_v_retrograde(x, T)
+                samp = sampen(v, 2, 0.2)
+                samp_pos_all.append(samp)
+            results1_4.append({
+                'N': N, 
+                'n': noise,
+                'Sample Entropy': np.mean(samp_pos_all),
+                'Std': np.std(samp_pos_all)})
+    results_frame1_4 = pd.DataFrame(results1_4)
+    results_frame1_4.to_csv("results/simulation_1_4.csv", index=False)
+    print("Résultats de simu 1.4 sauvegardés avec succès.")
+    print("Fin de la simulation 1.4")
+
+
+
+
+    print("---------------------------------------------------------------------------------")
+    print("1.5 Influence de la période d'échantillonnage et du facteur de bruit sur la sample entropy de l'accélération estimée")
+    print("Simulation effectuée sur les accélérations estimées du modèle")
+    print("---------------------------------------------------------------------------------")
+    # Paramètres fixes
+    N_1_5 = 2000
+    print(f"Nombre d'échantillons: {N_1_5}")
+    print(f"Nombre de réalisations: {nrealisations}")
+    print(f"Conditions Initiales: {x_0}")
+
+    results1_5 = []
+    for T in Ts:
+        for noise in n:
+            samp_pos_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"Simulation pour T={T} et n={noise}"):
+                L = MRU_gen(2000, T, x_0, noise)
+                x = L[:,0]
+                a = estimate_a_retrograde(x, T)
+                samp = sampen(a, 2, 0.2)
+                samp_pos_all.append(samp)
+            results1_5.append({
+                'T': T, 
+                'n': noise,
+                'Sample Entropy': np.mean(samp_pos_all),
+                'Std': np.std(samp_pos_all)})
+    results_frame1_5 = pd.DataFrame(results1_5)
+    results_frame1_5.to_csv("results/simulation_1_5.csv", index=False)
+    print("Résultats de simu 1.5 sauvegardés avec succès.")
+    print("Fin de la simulation 1.5")
+
+
+    print("---------------------------------------------------------------------------------")
+    print("1.6 Influence du nombre d'échantillons et du facteur de bruit sur la sample entropy de l'accélération estimée")
+    print("Simulation effectuée sur les accélérations estimées du modèle")
+    print("---------------------------------------------------------------------------------")
+    # Paramètres fixes
+    print(f"Période d'échantillonnage: T = 1.0 s")
+    print(f"Nombre de réalisations: {nrealisations}")
+    print(f"Conditions Initiales: {x_0}")
+
+    results1_6 = []
+    for N in Ns:
+        for noise in n:
+            samp_pos_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"Simulation pour N={N} et n={noise}"):
+                L = MRU_gen(N, 1.0, x_0, noise)
+                x = L[:,0]
+                a = estimate_a_retrograde(x, T)
+                samp = sampen(a, 2, 0.2)
+                samp_pos_all.append(samp)
+            results1_6.append({
+                'N': N, 
+                'n': noise,
+                'Sample Entropy': np.mean(samp_pos_all),
+                'Std': np.std(samp_pos_all)})
+    results_frame1_6 = pd.DataFrame(results1_6)
+    results_frame1_6.to_csv("results/simulation_1_6.csv", index=False)
+    print("Résultats de simu 1.6 sauvegardés avec succès.")
+    print("Fin de la simulation 1.6")
+
+
+     
+
+
+    return
+
+
+def simulate_MUA():
+    """
+    Simulation de Monte-Carlo pour voir l'impact des paramètres du mouvement rectiligne uniformément accéléré sur la sample entropy.
+    """
+    print("<===== Simulation MUA =====>")
+    print("---------------------------------------------------------------------------------")
+    print("2.1 Influence de la période d'échantillonnage et du facteur de bruit sur la sample entropy de la position")
+    print("Simulation effectuée sur les positions exactes du modèle")
+    print("---------------------------------------------------------------------------------")
+    # Paramètres de simulation fixe
+    N = 2000  # Nombre d'échantillons
+    nrealisations = 100  # Nombre de réalisations
+    x_0 = np.array([0, 0, 0])  # Position, vitesse, accélération initiales
+    print(f"Nombre d'échantillons à tester: {N}")
+
+    # Paramètres à tester
+    Ts = [0.01, 0.1, 0.5, 1, 10, 15, 20, 60]  # Période d'échantillonnage en secondes
+    n = [1000, 2000, 5000, 10000, 15000, 20000, 30000, 50000]  # Facteur de bruit
+    results2_1 = []
+    for T in Ts:
+        for noise in n:
+            samp_pos_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"Simulation pour T={T} s et n={noise}"):
+                L = MUA_gen(N, 1.0, x_0, noise)  # Génération du MUA
+                x = L[:, 0]  # Extraire la position
+                samp = sampen(x, 2, 0.2)  # Calcul de la Sample Entropy
+                samp_pos_all.append(samp)
+            results2_1.append({
+                'T': T,
+                'n': noise,
+                'Sample Entropy': np.mean(samp_pos_all),
+                'Std': np.std(samp_pos_all)})
+    results_frame2_1 = pd.DataFrame(results2_1)
+    results_frame2_1.to_csv("results/simulation_2_1.csv", index=False)
+    print("Résultats de simu 2.1 sauvegardés avec succès.")
+    print("Fin de la simulation 2.1")
+
+    # ---------------------------------------------------------------------------------
+    print("2.2 Influence du nombre d'échantillons et du facteur de bruit sur la sample entropy de la position")
+    print("Simulation effectuée sur les positions exactes du modèle")
+    print("---------------------------------------------------------------------------------")
+    T = 1.0  # Période d'échantillonnage fixée
+    Ns = [100, 500, 1000, 2000, 5000, 10000]  # Nombre d'échantillons à tester
+    results2_2 = []
+    for N in Ns:
+        for noise in n:
+            samp_pos_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"Simulation pour N={N} et n={noise}"):
+                L = MUA_gen(N, 1.0, x_0, noise)
+                x = L[:, 0]
+                samp = sampen(x, 2, 0.2)
+                samp_pos_all.append(samp)
+            results2_2.append({
+                'N': N,
+                'n': noise,
+                'Sample Entropy': np.mean(samp_pos_all),
+                'Std': np.std(samp_pos_all)})
+    results_frame2_2 = pd.DataFrame(results2_2)
+    results_frame2_2.to_csv("results/simulation_2_2.csv", index=False)
+    print("Résultats de simu 2.2 sauvegardés avec succès.")
+    print("Fin de la simulation 2.2")
+
+    # ---------------------------------------------------------------------------------
+    print("2.3 Influence de la période d'échantillonnage et du facteur de bruit sur la sample entropy de la vitesse estimée")
+    print("Simulation effectuée sur les vitesses estimées du modèle")
+    print("---------------------------------------------------------------------------------")
+    N_2_2 = 2000
+    results2_3 = []
+    for T in Ts:
+        for noise in n:
+            samp_vel_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"Simulation pour T={T} s et n={noise}"):
+                L = MUA_gen(2000, T, x_0, noise)
+                v = estimate_v_retrograde(L[:, 0], T)
+                samp = sampen(v, 2, 0.2)
+                samp_vel_all.append(samp)
+            results2_3.append({
+                'T': T,
+                'n': noise,
+                'Sample Entropy v_est': np.mean(samp_vel_all),
+                'Std': np.std(samp_vel_all)})
+    results_frame2_3 = pd.DataFrame(results2_3)
+    results_frame2_3.to_csv("results/simulation_2_3.csv", index=False)
+    print("Résultats de simu 2.3 sauvegardés avec succès.")
+    print("Fin de la simulation 2.3")
+
+    # ---------------------------------------------------------------------------------
+    print("2.4 Influence du nombre d'échantillons et du facteur de bruit sur la sample entropy de la vitesse estimée")
+    print("Simulation effectuée sur les vitesses estimées du modèle")
+    print("---------------------------------------------------------------------------------")
+    results2_4 = []
+    for N in Ns:
+        for noise in n:
+            samp_vel_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"Simulation pour N={N} et n={noise}"):
+                L = MUA_gen(N, 1.0, x_0, noise)
+                v = estimate_v_retrograde(L[:, 0], T)
+                samp = sampen(v, 2, 0.2)
+                samp_vel_all.append(samp)
+            results2_4.append({
+                'N': N,
+                'n': noise,
+                'Sample Entropy': np.mean(samp_vel_all),
+                'Std': np.std(samp_vel_all)})
+    results_frame2_4 = pd.DataFrame(results2_4)
+    results_frame2_4.to_csv("results/simulation_2_4.csv", index=False)
+    print("Résultats de simu 2.4 sauvegardés avec succès.")
+    print("Fin de la simulation 2.4")
+
+    # ---------------------------------------------------------------------------------
+    print("2.5 Influence de la période d'échantillonnage et du facteur de bruit sur la sample entropy de l'accélération estimée")
+    print("Simulation effectuée sur les accélérations estimées du modèle")
+    print("---------------------------------------------------------------------------------")
+    results2_5 = []
+    N_2_5 = 2000
+    for T in Ts:
+        for noise in n:
+            samp_acc_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"Simulation pour T={T} s et n={noise}"):
+                L = MUA_gen(2000, T, x_0, noise)
+                a = estimate_a_retrograde(L[:, 0], T)
+                samp = sampen(a, 2, 0.2)
+                samp_acc_all.append(samp)
+            results2_5.append({
+                'T': T,
+                'n': noise,
+                'Sample Entropy': np.mean(samp_acc_all),
+                'Std': np.std(samp_acc_all)})
+    results_frame2_5 = pd.DataFrame(results2_5)
+    results_frame2_5.to_csv("results/simulation_2_5.csv", index=False)
+    print("Résultats de simu 2.5 sauvegardés avec succès.")
+    print("Fin de la simulation 2.5")
+
+    # ---------------------------------------------------------------------------------
+    print("2.6 Influence du nombre d'échantillons et du facteur de bruit sur la sample entropy de l'accélération estimée")
+    print("Simulation effectuée sur les accélérations estimées du modèle")
+    print("---------------------------------------------------------------------------------")
+    results2_6 = []
+    for N in Ns:
+        for noise in n:
+            samp_acc_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"Simulation pour N={N} et n={noise}"):
+                L = MUA_gen(N, 1.0, x_0, noise)
+                a = estimate_a_retrograde(L[:, 0], T)
+                samp = sampen(a, 2, 0.2)
+                samp_acc_all.append(samp)
+            results2_6.append({
+                'N': N,
+                'n': noise,
+                'Sample Entropy': np.mean(samp_acc_all),
+                'Std': np.std(samp_acc_all)})
+    results_frame2_6 = pd.DataFrame(results2_6)
+    results_frame2_6.to_csv("results/simulation_2_6.csv", index=False)
+    print("Résultats de simu 2.6 sauvegardés avec succès.")
+    print("Fin de la simulation 2.6")
+
+    return
+
+
+
+def simulate_Singer():
+    """
+    Simulation de Monte-Carlo pour voir l'impact des paramètres du modèle de Singer sur la sample entropy.
+    """
+    print("<===== Simulation Singer =====>")
+
+    # Paramètres fixes pour toutes les simulations
+    nrealisations = 100  # Nombre de réalisations
+    x_0 = np.array([0, 0, 0])  # Conditions initiales
+    alphas = [0.1, 0.5, 1.0, 2.0, 5.0]  # Valeurs de alpha
+    sigma_ms = [1000, 2000, 5000, 10000, 15000, 20000, 30000, 50000]  # Valeurs de sigma_m
+    Ts = [0.01, 0.1, 0.5, 1, 10, 15, 20, 60]  # Périodes d'échantillonnage
+    Ns = [100, 500, 1000, 2000, 5000, 10000]  # Nombres d'échantillons
+
+    # ---------------------------------------------------------------------------------
+    print("3.1 Influence de alpha et sigma_m sur la sample entropy de la position")
+    results3_1 = []
+    for alpha in alphas:
+        for sigma_m in sigma_ms:
+            samp_pos_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"Alpha={alpha}, Sigma_m={sigma_m}"):
+                L = Singer_gen(2000, 1.0, x_0, alpha, sigma_m)
+                x = L[:, 0]  # Extraire la position
+                samp = sampen(x, 2, 0.2)
+                samp_pos_all.append(samp)
+            results3_1.append({
+                'alpha': alpha,
+                'sigma_m': sigma_m,
+                'Sample Entropy': np.mean(samp_pos_all),
+                'Std': np.std(samp_pos_all)})
+    pd.DataFrame(results3_1).to_csv("results/simulation_3_1.csv", index=False)
+    print("Simulation 3.1 terminée et sauvegardée.")
+
+    # ---------------------------------------------------------------------------------
+    print("3.2 Influence de N et sigma_m sur la sample entropy de la position")
+    results3_2 = []
+    for N in Ns:
+        for sigma_m in sigma_ms:
+            samp_pos_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"N={N}, Sigma_m={sigma_m}"):
+                L = Singer_gen(N, 1.0, x_0, 1.0, sigma_m)
+                x = L[:, 0]  # Extraire la position
+                samp = sampen(x, 2, 0.2)
+                samp_pos_all.append(samp)
+            results3_2.append({
+                'N': N,
+                'sigma_m': sigma_m,
+                'Sample Entropy': np.mean(samp_pos_all),
+                'Std': np.std(samp_pos_all)})
+    pd.DataFrame(results3_2).to_csv("results/simulation_3_2.csv", index=False)
+    print("Simulation 3.2 terminée et sauvegardée.")
+
+    # ---------------------------------------------------------------------------------
+    print("3.3 Influence de T et sigma_m sur la sample entropy de la position")
+    results3_3 = []
+    for T in Ts:
+        for sigma_m in sigma_ms:
+            samp_pos_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"T={T}, Sigma_m={sigma_m}"):
+                L = Singer_gen(2000, T, x_0, 1.0, sigma_m)
+                x = L[:, 0]  # Extraire la position
+                samp = sampen(x, 2, 0.2)
+                samp_pos_all.append(samp)
+            results3_3.append({
+                'T': T,
+                'sigma_m': sigma_m,
+                'Sample Entropy': np.mean(samp_pos_all),
+                'Std': np.std(samp_pos_all)})
+    pd.DataFrame(results3_3).to_csv("results/simulation_3_3.csv", index=False)
+    print("Simulation 3.3 terminée et sauvegardée.")
+
+    # ---------------------------------------------------------------------------------
+    print("3.4 Influence de alpha et sigma_m sur la sample entropy de la vitesse estimée")
+    results3_4 = []
+    for alpha in alphas:
+        for sigma_m in sigma_ms:
+            samp_vel_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"Alpha={alpha}, Sigma_m={sigma_m}"):
+                L = Singer_gen(2000, 1.0, x_0, alpha, sigma_m)
+                v = estimate_v_retrograde(L[:, 0], 1.0)  # Calcul de la vitesse estimée
+                samp = sampen(v, 2, 0.2)
+                samp_vel_all.append(samp)
+            results3_4.append({
+                'alpha': alpha,
+                'sigma_m': sigma_m,
+                'Sample Entropy': np.mean(samp_vel_all),
+                'Std': np.std(samp_vel_all)})
+    pd.DataFrame(results3_4).to_csv("results/simulation_3_4.csv", index=False)
+    print("Simulation 3.4 terminée et sauvegardée.")
+
+    # ---------------------------------------------------------------------------------
+    print("3.5 Influence de N et sigma_m sur la sample entropy de la vitesse estimée")
+    results3_5 = []
+    for N in Ns:
+        for sigma_m in sigma_ms:
+            samp_vel_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"N={N}, Sigma_m={sigma_m}"):
+                L = Singer_gen(N, 1.0, x_0, 1.0, sigma_m)
+                v = estimate_v_retrograde(L[:, 0], 1.0)
+                samp = sampen(v, 2, 0.2)
+                samp_vel_all.append(samp)
+            results3_5.append({
+                'N': N,
+                'sigma_m': sigma_m,
+                'Sample Entropy': np.mean(samp_vel_all),
+                'Std': np.std(samp_vel_all)})
+    pd.DataFrame(results3_5).to_csv("results/simulation_3_5.csv", index=False)
+    print("Simulation 3.5 terminée et sauvegardée.")
+
+    # ---------------------------------------------------------------------------------
+    print("3.6 Influence de T et sigma_m sur la sample entropy de la vitesse estimée")
+    results3_6 = []
+    for T in Ts:
+        for sigma_m in sigma_ms:
+            samp_vel_all = []
+            for i in tqdm.tqdm(range(nrealisations), desc=f"T={T}, Sigma_m={sigma_m}"):
+                L = Singer_gen(2000, T, x_0, 1.0, sigma_m)
+                v = estimate_v_retrograde(L[:, 0], T)
+                samp = sampen(v, 2, 0.2)
+                samp_vel_all.append(samp)
+            results3_6.append({
+                'T': T,
+                'sigma_m': sigma_m,
+                'Sample Entropy': np.mean(samp_vel_all),
+                'Std': np.std(samp_vel_all)})
+    pd.DataFrame(results3_6).to_csv("results/simulation_3_6.csv", index=False)
+    print("Simulation 3.6 terminée et sauvegardée.")
+
+    return
+
+
+
+def normalize_trajectory(x, y):
+    # Centrer les trajectoires autour de l'origine
+    x_centered = x - np.mean(x)
+    y_centered = y - np.mean(y)
+    
+    # Normaliser par la norme maximale
+    max_norm = max(np.max(np.abs(x_centered)), np.max(np.abs(y_centered)))
+    x_normalized = x_centered / max_norm
+    y_normalized = y_centered / max_norm
+    
+    return x_normalized, y_normalized
 
 
 if __name__ == "__main__":
+    
     """
-    t1 = time.time() 
-    test_SampEn()
-    print(f"Execution time: {time.time() - t1} s")
-    plot_custom_signals()
-    """
+    t1 = time.time()
+    simulate_MRU()
+    print(f"Fin de la simulation MRU en {time.time() - t1} secondes.")
+
     t2 = time.time()
-    results1_1 = simulate_MRU()
-    print(results1_1)
-    print(f"Execution time: {time.time() - t2} s")
+    simulate_MUA()
+    print(f"Fin de la simulation MUA en {time.time() - t2} secondes.")
+
+    t3 = time.time()
+    simulate_Singer()
+    print(f"Fin de la simulation Singer en {time.time() - t3} secondes.")
+    print("Fin de toutes les simulations sur SampEn.")
     
-    # Save results
-    results1_1.to_csv("results/simulation_MRU.csv", index=False)
-    print("Results saved successfully.")
-    
-    # Plot results
-    fig, ax = plt.subplots(1, 1, figsize=(10, 6))
-    for T in results1_1['T'].unique():
-        df = results1_1[results1_1['T'] == T]
-        ax.errorbar(df['n'], df['Sample Entropy'], label=f"T={T} s")
-    ax.set_xlabel("Facteur de bruit n")
-    ax.set_ylabel("Sample Entropy")
-    ax.set_title("Influence de la période d'échantillonnage et du facteur de bruit sur la sample entropy")
-    ax.legend()
+    """
+
+    # Paramètres MRU :
+    N = 2000
+    T = 5.0
+    x_0_mru = np.array([0, 1])
+    y_0_mru = np.array([0, 1])
+    noise = 100
+    L_x = MRU_gen(N, T, x_0_mru, noise)
+    x_mru = L_x[:,0]
+    L_y = MRU_gen(N, T, y_0_mru, noise)
+    y_mru = L_y[:,0]
+
+    # Paramètres MUA
+    x_0_mua = np.array([0, 1, 0])
+    y_0_mua = np.array([0, 1, 0])
+    L_x_mua = MUA_gen(N, T, x_0_mua, noise)
+    x_mua = L_x_mua[:,0]
+    L_y_mua = MUA_gen(N, T, y_0_mua, noise)
+    y_mua = L_y_mua[:,0]
+
+    # Paramètres Singer
+    alpha = 0.03
+    sigma_m = 100
+    x_0_singer = np.array([0, 1, 0])
+    y_0_singer = np.array([0, 1, 0])
+    L_x_singer = Singer_gen(N, T, x_0_singer, alpha, sigma_m)
+    x_singer = L_x_singer[:,0]
+    L_y_singer = Singer_gen(N, T, y_0_singer, alpha, sigma_m)
+    y_singer = L_y_singer[:,0]
+
+    # Normalisation des trajectoires
+
+    # Normalisation des trajectoires MRU
+    x_mru_norm, y_mru_norm = normalize_trajectory(x_mru, y_mru)
+
+    # Normalisation des trajectoires MUA
+    x_mua_norm, y_mua_norm = normalize_trajectory(x_mua, y_mua)
+
+    # Normalisation des trajectoires Singer
+    x_singer_norm, y_singer_norm = normalize_trajectory(x_singer, y_singer)
+
+    # Plot des trajectoires normalisées
+    plt.figure(figsize=(10, 10))
+    plt.plot(x_mru_norm, y_mru_norm, label=f"Uniform rectilinear motion (N={N}, T={T}, noise={noise})")
+    plt.plot(x_mua_norm, y_mua_norm, label=f"Uniformly accelerated motion (N={N}, T={T}, noise={noise})")
+    plt.plot(x_singer_norm, y_singer_norm, label=f"Singer (N={N}, T={T}, alpha={alpha}, sigma_m={sigma_m})")
+    plt.legend(loc="best")
+    plt.title("Let's compare the shape of the 3 classes of trajectories")
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.grid(True)
     plt.show()
     
-    #Plot surface rsults
-    fig3 = plt.figure(figsize=(12, 8))
-    ax_b = fig3.add_subplot(111, projection='3d')
-
-    # Create a meshgrid from the unique values of 'N' and 'n'
-    T_unique_T = results1_1['T'].unique()
-    n_unique_T = results1_1['n'].unique()
-    N_T, n_T = np.meshgrid(T_unique_T, n_unique_T)
+       
 
 
-    sampen_pos_2d_T = results1_1['Sample Entropy'].values.reshape(len(n_unique_T), len(T_unique_T))
 
 
-    surface_b = ax_b.plot_surface(N_T, n_T, sampen_pos_2d_T, cmap='viridis', edgecolor='k')
 
-    # Customize the view angle for better visualization
-    ax_b.view_init(65, 112)
-
-    # Add titles and labels
-    ax_b.set_title('3D Visualization of Sample Entropy for MRU: True Positions', fontsize=16, fontweight='bold', pad=20)
-    ax_b.set_xlabel('T (Sampling)', fontsize=12, labelpad=10)
-    ax_b.set_ylabel('n (Noise Factor)', fontsize=12, labelpad=10)
-    ax_b.set_zlabel('Mean(Sample Entropy)', fontsize=12, labelpad=10)
-
-    # Add a color bar to indicate the scale of Sample Entropy
-    cbar_b = fig3.colorbar(surface_b, shrink=0.5, aspect=10)
-    cbar_b.set_label('Mean(Sample Entropy)', fontsize=12)
-
-    # Show the plot
-    plt.show()
+    

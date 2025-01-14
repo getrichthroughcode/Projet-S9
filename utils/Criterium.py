@@ -203,9 +203,71 @@ def DCCA(x, y, s):
 
 
 
-sign_test = np.random.randn(500)
+def sampen_multivariate(signal, m, r, dist_type=None):
+    """
+    Computes the Sample Entropy for a multivariate signal (e.g., 2D or higher).
+    
+    Parameters:
+        signal: np.ndarray
+            Multivariate signal array of shape (N, d), where N is the number of samples
+            and d is the number of dimensions.
+        m: int
+            Embedding dimension (m < N).
+        r: float
+            Tolerance (percentage applied to the SD of the signal in each dimension).
+        dist_type: str, optional
+            Distance type, specified as a string. Default is 'euclidean'.
+    
+    Returns:
+        float: Sample Entropy value for the multivariate signal.
+    """
+    # Error checking
+    if signal is None or m is None or r is None:
+        raise ValueError("Not enough parameters. You must specify signal, m, and r.")
+    
+    if not isinstance(signal, (list, np.ndarray)):
+        raise ValueError("The 'signal' parameter must be a list or numpy array.")
+    
+    signal = np.array(signal, dtype=float)
+    if len(signal.shape) == 1:  # Convert 1D signal to 2D for consistency
+        signal = signal[:, np.newaxis]
+    
+    N, d = signal.shape  # N: number of samples, d: dimensions
+    
+    if m >= N:
+        raise ValueError("Embedding dimension must be smaller than the number of samples (m < N).")
+    
+    if dist_type is None:
+        dist_type = 'euclidean'  # Default distance metric
 
-t1 = time.time()
-print(sampen(sign_test, 2, 0.2))
-t2 = time.time()
-print(f"Time elapsed: {t2 - t1} s")
+    # Calculate standard deviation for each dimension
+    sigma = np.std(signal, axis=0)
+
+    # Create the matrix of matches (time-delayed vectors) for dimension m and m+1
+    matches_m = np.array([signal[i:i + m] for i in range(N - m)])
+    matches_m1 = np.array([signal[i:i + m + 1] for i in range(N - m - 1)])
+
+    # Calculate pairwise distances for matches of size m and m+1
+    d_m = pdist(matches_m.reshape(-1, d * m), metric=dist_type)
+    d_m1 = pdist(matches_m1.reshape(-1, d * (m + 1)), metric=dist_type)
+
+    # Apply the tolerance threshold
+    threshold_m = r * np.linalg.norm(sigma)  # Multivariate threshold
+    B = np.sum(d_m <= threshold_m)
+    A = np.sum(d_m1 <= threshold_m)
+
+    # Compute SampEn
+    if B == 0 or A == 0:
+        value = float('inf')  # No regularity detected
+    else:
+        value = -np.log((A / B) * ((N - m + 1) / (N - m - 1)))
+
+    # Bound the result to avoid infinite values
+    if np.isinf(value):
+        value = -np.log(2 / ((N - m - 1) * (N - m)))
+
+    return value
+
+
+
+

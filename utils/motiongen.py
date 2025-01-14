@@ -71,8 +71,8 @@ def MUA_gen(length, T, x_0, n):
 
 
 def Singer_gen(length, T, x_0,alpha,sigma_m ):
-    L=[]
-    L.append(x_0)  # Ensure x_0 is a column vector
+    L= np.zeros((length+1,3))
+    L[0] = x_0  # Ensure x_0 is a column vector
     q11 = (1 / (2 * alpha ** 5)) * (
                 2 * alpha * T - 2 * alpha ** 2 * T ** 2 + 2 * alpha ** 3 * T ** 3 / 3 - 4 * alpha * T * np.exp(
             -alpha * T) - np.exp(-2 * alpha * T) + 1)
@@ -93,12 +93,13 @@ def Singer_gen(length, T, x_0,alpha,sigma_m ):
     R = np.linalg.cholesky(Q)  # Cholesky decomposition
     #print(f"{R=}")
     for i in range(length):
-        U = np.random.randn(3, 1)  # Generate a random vector
+        U = np.random.randn(3,)  # Generate a random vector
 
         B = R @ U         # Generate the noise vector
         # Update x with the new state
 
-        x_new  =phi @ L[-1] + B
-        L.append(x_new)
+        L[i + 1] = phi @ L[i] + B
 
     return L
+
+
