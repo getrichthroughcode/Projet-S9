@@ -60,3 +60,4 @@ def plot_simu_MRU_aligned(file_path: str):
     # Show the plot
     plt.tight_layout()
     plt.show()
+    

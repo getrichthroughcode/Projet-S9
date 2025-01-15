@@ -19,6 +19,9 @@ from utils.Criterium import *
 from utils.motiongen import *
 from utils.estimate import *
 from utils.plot_simu import *
+from utils.plot_sampen_insights import *
+from utils.plot_2d_heatmap_or_contour import *
+
 
 # Test des fonctions Sample Entropy et DCCA
 
@@ -226,6 +229,8 @@ def simulate_MRU():
     results_frame1_4.to_csv("results/simulation_1_4.csv", index=False)
     print("Résultats de simu 1.4 sauvegardés avec succès.")
     print("Fin de la simulation 1.4")
+
+    
 
 
 
@@ -587,6 +592,125 @@ def simulate_Singer():
 
     return
 
+def simulate_sampen():
+    """
+    Simulation of motion models (MRU, MUA, Singer) to assess the influence of 
+    Sample Entropy parameters (pattern size m, threshold r, noise, and extra Singer params)
+    on position, velocity, and acceleration.
+    """
+    print("<===== Simulation of Motion Models with Noise and Singer Parameters =====>")
+    motion_models = ['MRU', 'MUA', 'Singer']
+    nrealisations = 50  # Number of realizations
+    Ts = [0.01, 0.1, 0.5, 1, 10]  # Sampling periods in seconds
+    Ns = [100, 500, 1000, 2000]  # Number of samples
+    ms = [2, 3, 10,15,20]  # Pattern sizes for Sample Entropy
+    noise_factors = [1000, 2000, 5000, 10000]  # Noise factors for MRU and MUA
+    x_0_mru = np.array([0, 0])  # Initial conditions for MRU
+    x_0_mua = np.array([0, 0, 0])  # Initial conditions for MUA
+    x_0_singer = np.array([0, 0, 0])  # Initial conditions for Singer
+    
+    # Parameters specific to each model
+    model_params = {
+        'MRU': {'gen_func': MRU_gen, 'x_0': x_0_mru, 'noise_factors': noise_factors},
+        'MUA': {'gen_func': MUA_gen, 'x_0': x_0_mua, 'noise_factors': noise_factors},
+        'Singer': {
+            'gen_func': Singer_gen, 
+            'x_0': x_0_singer,
+            'alphas': [0.1, 0.5, 1.0, 2.0, 5.0],  # Varying alpha
+            'sigma_ms': [1000, 2000, 5000, 10000]  # Varying sigma_m
+        }
+    }
+    
+    for model in motion_models:
+        print(f"Simulating for {model}...")
+        params = model_params[model]
+        gen_func = params['gen_func']
+        x_0 = params['x_0']
+        
+        results = []
+        
+        for m in ms:
+            for T in Ts:
+                for N in Ns:
+                    if model in ['MRU', 'MUA']:
+                        for noise in params['noise_factors']:
+                            samp_pos_all = []
+                            samp_vel_all = []
+                            samp_acc_all = []
+                            
+                            for i in tqdm.tqdm(range(nrealisations), desc=f"{model} m={m}, T={T}, N={N}, noise={noise}"):
+                                L = gen_func(N, T, x_0, noise)
+                                
+                                # Position
+                                x = L[:, 0]
+                                samp_pos_all.append(sampen(x, m, 0.2))
+                                
+                                # Velocity (retrogressively estimated)
+                                v = estimate_v_retrograde(x, T)
+                                samp_vel_all.append(sampen(v, m, 0.2))
+                                
+                                # Acceleration (retrogressively estimated)
+                                a = estimate_a_retrograde(x, T)
+                                samp_acc_all.append(sampen(a, m, 0.2))
+                            
+                            results.append({
+                                'm': m,
+                                'T': T,
+                                'N': N,
+                                'noise': noise,
+                                'Sample Entropy Position': np.mean(samp_pos_all),
+                                'Sample Entropy Velocity': np.mean(samp_vel_all),
+                                'Sample Entropy Acceleration': np.mean(samp_acc_all),
+                                'Std Position': np.std(samp_pos_all),
+                                'Std Velocity': np.std(samp_vel_all),
+                                'Std Acceleration': np.std(samp_acc_all)
+                            })
+                    elif model == 'Singer':
+                        for alpha in params['alphas']:
+                            for sigma_m in params['sigma_ms']:
+                                samp_pos_all = []
+                                samp_vel_all = []
+                                samp_acc_all = []
+                                
+                                for i in tqdm.tqdm(range(nrealisations), desc=f"Singer m={m}, T={T}, N={N}, alpha={alpha}, sigma_m={sigma_m}"):
+                                    L = gen_func(N, T, x_0, alpha, sigma_m)
+                                    
+                                    # Position
+                                    x = L[:, 0]
+                                    samp_pos_all.append(sampen(x, m, 0.2))
+                                    
+                                    # Velocity (retrogressively estimated)
+                                    v = estimate_v_retrograde(x, T)
+                                    samp_vel_all.append(sampen(v, m, 0.2))
+                                    
+                                    # Acceleration (retrogressively estimated)
+                                    a = estimate_a_retrograde(x, T)
+                                    samp_acc_all.append(sampen(a, m, 0.2))
+                                
+                                results.append({
+                                    'm': m,
+                                    'T': T,
+                                    'N': N,
+                                    'alpha': alpha,
+                                    'sigma_m': sigma_m,
+                                    'Sample Entropy Position': np.mean(samp_pos_all),
+                                    'Sample Entropy Velocity': np.mean(samp_vel_all),
+                                    'Sample Entropy Acceleration': np.mean(samp_acc_all),
+                                    'Std Position': np.std(samp_pos_all),
+                                    'Std Velocity': np.std(samp_vel_all),
+                                    'Std Acceleration': np.std(samp_acc_all)
+                                })
+        
+        # Save results for the motion model
+        results_df = pd.DataFrame(results)
+        if model == 'Singer':
+            results_df.to_csv(f"results/simulation_{model}_varying_m_noise_and_params.csv", index=False)
+        else:
+            results_df.to_csv(f"results/simulation_{model}_varying_m_and_noise.csv", index=False)
+        print(f"Results for {model} saved successfully.")
+    
+    print("All simulations completed successfully.")
+
 
 
 def normalize_trajectory(x, y):
@@ -619,13 +743,13 @@ if __name__ == "__main__":
     print("Fin de toutes les simulations sur SampEn.")
     
     """
-
+    """
     # Paramètres MRU :
-    N = 2000
+    N = 50
     T = 5.0
     x_0_mru = np.array([0, 1])
     y_0_mru = np.array([0, 1])
-    noise = 100
+    noise = 10
     L_x = MRU_gen(N, T, x_0_mru, noise)
     x_mru = L_x[:,0]
     L_y = MRU_gen(N, T, y_0_mru, noise)
@@ -659,7 +783,7 @@ if __name__ == "__main__":
 
     # Normalisation des trajectoires Singer
     x_singer_norm, y_singer_norm = normalize_trajectory(x_singer, y_singer)
-
+    
     # Plot des trajectoires normalisées
     plt.figure(figsize=(10, 10))
     plt.plot(x_mru_norm, y_mru_norm, label=f"Uniform rectilinear motion (N={N}, T={T}, noise={noise})")
@@ -672,10 +796,92 @@ if __name__ == "__main__":
     plt.grid(True)
     plt.show()
     
-       
+    
+    axis_t = np.linspace(0, N, N-1)
+    # Calcul de la Sample Entropy pour les trajectoires MRU
+    sampen_mru,m,m_1 = sampen(x_mru_norm, 2, 0.2) #matches of size 2  and m_1 matches of size 3 
+    print(f"{m.shape}")
+    plt.figure(figsize=(12, 6))
+    plt.plot(x_mru_norm, label="Time Series", color="blue")
+
+    # Tracer les motifs de taille 2 (m)
+    step_m = 25 # Pas d'échantillonnage pour m
+    for i, pattern in enumerate(m[::step_m]):
+        start_idx = i * step_m  # Index de départ réel
+        end_idx = start_idx + len(pattern)  # Index de fin réel
+        if end_idx <= len(x_mru_norm):  # Vérifier les limites
+            plt.plot(axis_t[start_idx:end_idx], x_mru_norm[start_idx:end_idx],
+                    'o-', label=f"Pattern m={len(pattern)} (Index {start_idx})", color="orange")
+
+    # Tracer les motifs de taille 3 (m+1)
+    step_m1 = 10  # Pas d'échantillonnage pour m+1
+    for i, pattern in enumerate(m_1[::step_m1]):
+        start_idx = i * step_m1  # Index de départ réel
+        end_idx = start_idx + len(pattern)  # Index de fin réel
+        if end_idx <= len(x_mru_norm):  # Vérifier les limites
+            plt.plot(axis_t[start_idx:end_idx], x_mru_norm[start_idx:end_idx],
+                    's-', label=f"Pattern m+1={len(pattern)}", color="red")
+
+    # Ajouter des titres et une légende
+    plt.title("Sample Entropy: Highlighting Matched Patterns of m and m+1", fontsize=14)
+    plt.xlabel("Time", fontsize=12)
+    plt.ylabel("Time serie Value", fontsize=12)
+    plt.legend()
+    plt.grid(alpha=0.3)
+
+    plt.show()
+    """
+        
+    
+    
 
 
 
 
 
     
+    """
+    # Example data: Sample Entropy values for three trajectory classes
+    np.random.seed(42)
+    n_points = 30
+    sample_entropy_singer = np.random.normal(0.8, 0.05, n_points)
+    sample_entropy_accelerated = np.random.normal(1.2, 0.05, n_points)
+    sample_entropy_other = np.random.normal(1.6, 0.05, n_points)
+
+    # Combine data
+    sample_entropy = np.concatenate([sample_entropy_singer, sample_entropy_accelerated, sample_entropy_other])
+    labels = np.array(["Singer"] * n_points + ["Accelerated"] * n_points + ["Other"] * n_points)
+
+    # Thresholds for decision boundary
+    threshold_1 = 1.0  # Boundary between Singer and Accelerated
+    threshold_2 = 1.4  # Boundary between Accelerated and Other
+
+    # Plot the data
+    plt.figure(figsize=(12, 6))
+    plt.scatter(sample_entropy[:n_points], np.zeros(n_points), label="Singer Motion", color="orange")
+    plt.scatter(sample_entropy[n_points:2*n_points], np.zeros(n_points), label="Uniformly Accelerated Motion ", color="blue")
+    plt.scatter(sample_entropy[2*n_points:], np.zeros(n_points), label="Uniform Rectilinear Motion", color="green")
+
+    # Add decision boundaries
+    plt.axvline(threshold_1, color='red', linestyle='--', label="Threshold 1")
+    plt.axvline(threshold_2, color='purple', linestyle='--', label="Threshold 2")
+
+    # Add labels and legend
+    plt.title("Decision Boundary Based on Sample Entropy", fontsize=14)
+    plt.xlabel("Sample Entropy", fontsize=12)
+    plt.yticks([])  # Remove y-axis ticks as they are not needed
+    plt.legend()
+    plt.grid(alpha=0.3)
+
+    plt.show()
+    """
+    """
+    t = time.time()
+    simulate_sampen()
+    print(f"Fin de la simulation en {time.time() - t} secondes.")
+    """
+    # Paths to simulation result CSV files
+
+
+# Load the simulation results
+
