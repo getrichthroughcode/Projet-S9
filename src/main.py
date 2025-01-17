@@ -884,4 +884,4 @@ if __name__ == "__main__":
 
 
 # Load the simulation results
-
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
